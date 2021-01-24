@@ -26,28 +26,31 @@ def get_model(dropout, input_size, hidden_size):
 	)
 	return model
 
-def train(model, x, y):
+def train(model, x, y, epoch=25):
 	x = torch.from_numpy(x.to_numpy()).to(DEVICE).float()
 	y = torch.from_numpy(y.to_numpy()).to(DEVICE).float()
 	loss_fn = nn.L1Loss()
 	optimiser = torch.optim.Adam(model.parameters(), lr=0.009)
 	start = 0
 	batch_size = 64
-	while start < len(x):
-		batch_len = batch_size if (start + batch_size) < len(x) else (len(x) - start)
-		x_batch = torch.narrow(x, 0, start, batch_len)
-		y_batch = torch.narrow(y, 0, start, batch_len)
+	for i in range(epoch):
+		print("training epoch {}/{}".format(i + 1, epoch))
+		while start < len(x):
+			batch_len = batch_size if (start + batch_size) < len(x) \
+				else (len(x) - start)
+			x_batch = torch.narrow(x, 0, start, batch_len)
+			y_batch = torch.narrow(y, 0, start, batch_len)
 
-		output = model(x_batch)
-		loss = loss_fn(output, y_batch)
-		optimiser.zero_grad()
-		if (start + batch_len) < len(x):
-			loss.backward(retain_graph = True)
-		else:
-			loss.backward(retain_graph = False)
-		optimiser.step()
+			output = model(x_batch)
+			loss = loss_fn(output, y_batch)
+			optimiser.zero_grad()
+			if (start + batch_len) < len(x):
+				loss.backward(retain_graph = True)
+			else:
+				loss.backward(retain_graph = False)
+			optimiser.step()
 
-		start = start + batch_len
+			start = start + batch_len
 
 	return model
 
