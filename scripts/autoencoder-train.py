@@ -1,39 +1,62 @@
-from utils import autoencoder
-from utils import dataset
-import argparse, os, torch, json
+from utils import autoencoder, dataset, hyperparams
+import argparse, os, torch, json, uuid
 
 X_SKIP_COLS = ["date", "weight", "ts_id", "resp", "resp_1", "resp_2", "resp_3", "resp_4"]
-EXPECTED_FEATURES = 50
-DROPOUT = 0.25
-METRICS_INFO = ["mse", "r2", "mape"]
+METRICS_INFO = ["mse", "r2", "mae"]
 
-def prepare_data(data_folder, fast_mode):
-	(train, test, na_value) = dataset.read_data(data_folder, "ts_id",
-		fast_mode=fast_mode, na_value=0)
+def prepare_data(data_folder, fast_mode, na_value):
+	(train, test, na_value) = dataset.read_data(data_folder,
+		fast_mode=fast_mode, na_value=na_value)
 	x_train = train.drop(X_SKIP_COLS, axis=1)
 	x_test = test.drop(X_SKIP_COLS, axis=1)
 	return (x_train, x_test, na_value)
 
-def train_evaluate(data_folder, output_folder, fast_mode):
+def train_evaluate_fn(data_folder, output_folder, fast_mode, params):
+	output_folder = os.path.join(output_folder, uuid.uuid4().hex)
+	os.mkdir(output_folder)
 	print("Preparing data...")
-	(train, test, na_value) = prepare_data(data_folder, fast_mode)
-	model = autoencoder.get_model(train.shape[1], EXPECTED_FEATURES,
-		DROPOUT)
+	(train, test, na_value) = prepare_data(data_folder, fast_mode,
+		params["na_value"])
+	model = autoencoder.get_model(train.shape[1],
+		params["expected_features"], params["dropout"])
 	model.print_details()
 	print("Training...")
-	model = autoencoder.train(model, train)
+	model = autoencoder.train(model, train, epochs=params["epochs"],
+		lr=params["lr"])
 	print("Evaluating...")
 	metrics = autoencoder.evaluate(model, train, METRICS_INFO)
+
 	print("Saving files...")
 	result = { "metrics": metrics, "na_value": na_value}
 	result_path = os.path.join(output_folder, "result.json")
 	json_config = json.dumps(result, indent=4)
 	with open(result_path, "w") as result_file:
 		result_file.write(json_config)
+	params_path = os.path.join(output_folder, "params.json")
+	json_config = json.dumps(params, indent=4)
+	with open(params_path, "w") as params_file:
+		params_file.write(json_config)
 	model_path = os.path.join(output_folder, "autoencoder.mdl")
 	torch.save(model, model_path)
 	print("Output files (model, result) saved to {}".format(
 		output_folder))
+
+	data = { "loss": metrics["mse"], "metrics": metrics,
+		"result": output_folder, "input": params}
+	return data
+
+def train_evaluate(data_folder, output_folder, params_path,
+	fast_mode):
+	(trials, _) = hyperparams.train_and_evaluate(
+		data_folder, output_folder, params_path, fast_mode,
+		train_evaluate_fn)
+
+	result = { "all_trials": trials.results,
+		"best_trial": trials.best_trial["result"]}
+	result_path = os.path.join(output_folder, "result.json")
+	json_config = json.dumps(result, indent=4)
+	with open(result_path, "w") as result_file:
+		result_file.write(json_config)
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -42,6 +65,9 @@ def parse_args():
 		required=True)
 	parser.add_argument(
 		"--output_path", type=str, help="specifies the output folder path",
+		required=True)
+	parser.add_argument(
+		"--hyperparams_path", type=str, help="specifies the hyperparams config path",
 		required=True)
 	parser.add_argument(
 		"--fast_mode", default=False,
@@ -54,7 +80,8 @@ def main():
 	print("Args: {}".format(args))
 	data_path = os.path.abspath(args["data_path"])
 	output_path = os.path.abspath(args["output_path"])
+	params_path = os.path.abspath(args["hyperparams_path"])
 	fast_mode = args["fast_mode"]
-	train_evaluate(data_path, output_path, fast_mode)
+	train_evaluate(data_path, output_path, params_path, fast_mode)
 
 main()

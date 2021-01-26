@@ -1,32 +1,38 @@
 import pandas as pd
 import os, random, math
+from pandas.core.series import Series
 
 # mode to read just top few entries of the data file
 FAST_MODE = False
-TRAIN_ROWS = 10000
-TEST_ROWS = 2000
+TRAIN_ROWS = 100000
+TEST_ROWS = 20000
 
-def read_data(data_folder, max_col, fast_mode=FAST_MODE,
-	na_value=None):
+def read_data(data_folder, fast_mode=FAST_MODE, na_value=None):
 	train_path = os.path.join(data_folder, "train.csv")
 	if fast_mode:
 		train = pd.read_csv(train_path, nrows=TRAIN_ROWS)
 	else:
 		train = pd.read_csv(train_path)
-	max_value = train.max()[max_col]
 
 	test_path = os.path.join(data_folder, "test.csv")
 	if fast_mode:
 		test = pd.read_csv(test_path, nrows=TEST_ROWS)
 	else:
 		test = pd.read_csv(test_path)
-	max_value = max(max_value, test.max()[max_col]) + 1000
+
+	if na_value == "zero":
+		na_value = 0
+	elif na_value == "mean":
+		na_value = train.mean()
 
 	if na_value is None:
-		na_value = max_value
+		na_value = train.mean()
 
 	train = train.fillna(na_value)
 	test = test.fillna(na_value)
+
+	if isinstance(na_value,Series):
+		na_value = na_value.tolist()
 
 	return (train, test, na_value)
 
@@ -52,6 +58,6 @@ def split_data(data_path, output_folder, time_sensitive):
 	test_output = os.path.join(output_folder, "test.csv")
 	train_output = os.path.join(output_folder, "train.csv")
 
-	test_data.to_csv(test_output)
-	train_data.to_csv(train_output)
+	test_data.to_csv(test_output, index=False)
+	train_data.to_csv(train_output, index=False)
 	print("Split data saved to {}, {}".format(test_output, train_output))

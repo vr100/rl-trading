@@ -19,7 +19,7 @@ def get_prediction_data(data, model_path):
 	return (y_pred, metrics)
 
 def prepare_data(data_folder, model_path):
-	(train, test, na_value) = dataset.read_data(data_folder, "ts_id")
+	(train, test, na_value) = dataset.read_data(data_folder)
 	x_train = train[X_COLS]
 	y_train = train[Y_COL]
 	x_test = test[X_COLS]

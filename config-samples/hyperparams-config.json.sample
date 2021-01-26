@@ -1,0 +1,26 @@
+{
+	"batch_size": {
+		"function": "choice",
+		"args": [128, 256, 512]
+	},
+	"epochs": {
+		"function": "choice",
+		"args": [20, 30, 40, 50]
+	},
+	"lr": {
+		"function": "choice",
+		"args": [0.001, 0.01, 0.1]
+	},
+	"expected_features": {
+		"function": "choice",
+		"args": [32, 50, 64]
+	},
+	"na_value": {
+		"function": "choice",
+		"args": ["zero", "mean"]
+	},
+	"dropout": {
+		"function": "choice",
+		"args": [0.05, 0.1, 0.15]
+	}
+}

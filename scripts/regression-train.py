@@ -9,7 +9,7 @@ METRICS_INFO = ["mse", "r2", "mape"]
 
 def prepare_data(data_folder, output_type):
 	y_cols = Y_COLS_SINGLE if output_type == "single" else Y_COLS
-	(train, test, na_value) = dataset.read_data(data_folder, "ts_id")
+	(train, test, na_value) = dataset.read_data(data_folder)
 	x_train = train.drop(X_SKIP_COLS, axis=1)
 	y_train = train[y_cols]
 	x_test = test.drop(X_SKIP_COLS, axis=1)
