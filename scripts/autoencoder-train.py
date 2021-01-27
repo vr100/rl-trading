@@ -27,7 +27,8 @@ def train_evaluate_fn(data_folder, output_folder, fast_mode, params):
 	metrics = autoencoder.evaluate(model, train, METRICS_INFO)
 
 	print("Saving files...")
-	result = { "metrics": metrics, "na_value": na_value}
+	result = { "metrics": metrics, "fastmode": fast_mode,
+		"na_value": na_value}
 	result_path = os.path.join(output_folder, "result.json")
 	json_config = json.dumps(result, indent=4)
 	with open(result_path, "w") as result_file:
