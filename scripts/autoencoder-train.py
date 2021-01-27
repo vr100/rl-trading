@@ -55,9 +55,17 @@ def train_evaluate(data_folder, output_folder, params_path,
 	result = { "best_trial": trials.best_trial["result"],
 		"all_trials": trials.results}
 	result_path = os.path.join(output_folder, "result.json")
-	json_config = json.dumps(result, indent=4)
+	json_result = json.dumps(result, indent=4)
 	with open(result_path, "w") as result_file:
-		result_file.write(json_config)
+		result_file.write(json_result)
+
+	output_params_path = os.path.join(output_folder,
+		"hyperparams.json")
+	with open(params_path, "r") as json_file:
+		metadata = json.load(json_file)
+	json_metadata = json.dumps(metadata,indent=4)
+	with open(output_params_path, "w") as json_file:
+		json_file.write(json_metadata)
 
 def parse_args():
 	parser = argparse.ArgumentParser()
