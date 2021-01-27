@@ -51,8 +51,8 @@ def train_evaluate(data_folder, output_folder, params_path,
 		data_folder, output_folder, params_path, fast_mode,
 		train_evaluate_fn)
 
-	result = { "all_trials": trials.results,
-		"best_trial": trials.best_trial["result"]}
+	result = { "best_trial": trials.best_trial["result"],
+		"all_trials": trials.results}
 	result_path = os.path.join(output_folder, "result.json")
 	json_config = json.dumps(result, indent=4)
 	with open(result_path, "w") as result_file:
@@ -68,20 +68,33 @@ def parse_args():
 		required=True)
 	parser.add_argument(
 		"--hyperparams_path", type=str, help="specifies the hyperparams config path",
-		required=True)
+		default=None)
+	parser.add_argument(
+		"--params_path", type=str, help="specifies the params config path",
+		default=None)
 	parser.add_argument(
 		"--fast_mode", default=False,
 		type=lambda s: s.lower() in ['true', 'yes', '1'],
 		help="specifies whether only a sample subset should be run")
-	return vars(parser.parse_args())
+	return (vars(parser.parse_args()), parser)
 
 def main():
-	args = parse_args()
+	(args, parser) = parse_args()
 	print("Args: {}".format(args))
 	data_path = os.path.abspath(args["data_path"])
 	output_path = os.path.abspath(args["output_path"])
-	params_path = os.path.abspath(args["hyperparams_path"])
 	fast_mode = args["fast_mode"]
-	train_evaluate(data_path, output_path, params_path, fast_mode)
+	if args["hyperparams_path"]:
+		hyperparams_path = os.path.abspath(args["hyperparams_path"])
+		train_evaluate(data_path, output_path, hyperparams_path,
+			fast_mode)
+	elif args["params_path"]:
+		params_path = os.path.abspath(args["params_path"])
+		with open(params_path, "r") as json_file:
+			params = json.load(json_file)
+		train_evaluate_fn(data_path, output_path, fast_mode, params)
+	else:
+		print("Either --hyperparams_path or --params_path should be present")
+		parser.print_help()
 
 main()

@@ -1,0 +1,8 @@
+{
+	"batch_size": 256,
+	"dropout": 0.05,
+	"epochs": 30,
+	"expected_features": 64,
+	"lr": 0.001,
+	"na_value": "mean"
+}
