@@ -103,6 +103,11 @@ def train(model, x, epochs=25, lr=LEARNING_RATE,
 	return model
 
 def evaluate(model, x, metrics, batch_size=BATCH_SIZE):
+	pred = infer(model, x, batch_size)
+	metrics_info = metrics_util.compute_metrics(x, pred, metrics)
+	return metrics_info
+
+def infer(model, x, batch_size=BATCH_SIZE):
 	model.eval()
 	x = torch.from_numpy(x.to_numpy()).to(DEVICE).float()
 	dataset = TensorDataset(x)
@@ -112,5 +117,4 @@ def evaluate(model, x, metrics, batch_size=BATCH_SIZE):
 		for data in loader:
 			output = model(data[0])
 			pred = np.append(pred, output.numpy(), axis=0)
-	metrics_info = metrics_util.compute_metrics(x, pred, metrics)
-	return metrics_info
+	return pred

@@ -29,7 +29,7 @@ def batch_evaluate(model, x, y, metrics):
 	print("predicting..")
 	y_pred = np.empty(shape=(0, y.shape[1]))
 	start = 0
-	batch_size = 1024
+	batch_size = 512
 	while start < len(x):
 		print("Evaluating {}".format(start))
 		end = (start + batch_size) if (start + batch_size) < len(x) else len(x)
