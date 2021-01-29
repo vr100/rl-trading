@@ -3,7 +3,7 @@ from utils import regression, dataset, autoencoder
 
 X_SKIP_COLS = ["date", "weight", "ts_id", "resp", "resp_1", "resp_2", "resp_3", "resp_4"]
 Y_OUTPUT_COLS = ["date", "ts_id"]
-METRICS_INFO = ["mse", "r2", "mape"]
+METRICS_INFO = ["mse", "r2", "mae"]
 
 def get_cols_for_approach(approach):
 	if approach == 1:
@@ -26,14 +26,17 @@ def prepare_data(data_folder, model_path, config, fast_mode):
 	(train, test, na_value) = dataset.read_data(data_folder,
 		fast_mode)
 	x_train = train.drop(X_SKIP_COLS, axis=1)
-	x_train = autoencoder.infer(model, x_train)
 	y_train = train[y_cols]
 	x_test = test.drop(X_SKIP_COLS, axis=1)
-	x_test = autoencoder.infer(model, x_test)
 	y_test = test[y_cols]
 	out_train = train[Y_OUTPUT_COLS]
 	out_test = test[Y_OUTPUT_COLS]
 
+	print("Encoding data...")
+	x_train = autoencoder.encode(model, x_train,
+		config["autoencoder_output_features"])
+	x_test = autoencoder.encode(model, x_test,
+		config["autoencoder_output_features"])
 	return (x_train, x_test, y_train, y_test, out_train, out_test, na_value)
 
 def postprocess_data(out_data, y_pred, config):

@@ -118,3 +118,16 @@ def infer(model, x, batch_size=BATCH_SIZE):
 			output = model(data[0])
 			pred = np.append(pred, output.numpy(), axis=0)
 	return pred
+
+def encode(model, x, output_size, batch_size=BATCH_SIZE):
+	model.eval()
+	x = torch.from_numpy(x.to_numpy()).to(DEVICE).float()
+	dataset = TensorDataset(x)
+	loader = DataLoader(dataset, batch_size=batch_size)
+	encoded_x = np.empty(shape=(0, output_size))
+	with torch.no_grad():
+		for data in loader:
+			output = model.encode(data[0])
+			encoded_x = np.append(encoded_x, output.numpy(),
+				axis=0)
+	return encoded_x

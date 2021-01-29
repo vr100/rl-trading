@@ -16,7 +16,9 @@ def get_model(reg_type):
 	elif reg_type == "randomforest":
 		return RandomForestRegressor()
 	elif reg_type == "mlp":
-		return MLPRegressor()
+		return MLPRegressor(hidden_layer_sizes=150,
+			learning_rate="adaptive", learning_rate_init=0.0005,
+			alpha=0.001)
 	else:
 		print("unknown regression model type {}".format(reg_type))
 		exit(-1)
@@ -29,7 +31,7 @@ def batch_evaluate(model, x, y, metrics):
 	print("predicting..")
 	y_pred = np.empty(shape=(0, y.shape[1]))
 	start = 0
-	batch_size = 512
+	batch_size = 1024
 	while start < len(x):
 		print("Evaluating {}".format(start))
 		end = (start + batch_size) if (start + batch_size) < len(x) else len(x)
