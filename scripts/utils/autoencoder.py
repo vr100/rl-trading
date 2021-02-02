@@ -11,7 +11,45 @@ BATCH_SIZE = 256
 LEARNING_RATE = 0.001
 DEVICE = "cpu"
 
-class Autoencoder(nn.Module):
+class EnhancingAutoencoder(nn.Module):
+
+	def get_higher_power_of_2(self, value):
+		index = 0
+		value = value * 2
+		while value >= 2:
+			value = value / 2
+			index = index + 1
+		return int(math.pow(2, index))
+
+	def __init__(self, input_size, expected_size, dropout):
+		super(EnhancingAutoencoder, self).__init__()
+
+		higher_size = self.get_higher_power_of_2(
+			expected_size * 2)
+		encode_list = [ nn.BatchNorm1d(input_size),
+			nn.Linear(input_size, higher_size)]
+		encode_list.extend([ nn.GELU(), nn.Dropout(dropout),
+			nn.BatchNorm1d(higher_size),
+			nn.Linear(higher_size, expected_size)])
+		self.encode = nn.Sequential(*encode_list)
+		decode_list = [ nn.GELU(), nn.Dropout(dropout),
+			nn.BatchNorm1d(expected_size),
+			nn.Linear(expected_size, higher_size)]
+		decode_list.extend([ nn.GELU(), nn.Dropout(dropout),
+			nn.BatchNorm1d(higher_size),
+			nn.Linear(higher_size, input_size)])
+		self.decode = nn.Sequential(*decode_list)
+
+	def print_details(self):
+		print("Encoder: {}".format(self.encode))
+		print("Decoder: {}".format(self.decode))
+
+	def forward(self, x):
+		x = self.encode(x)
+		x = self.decode(x)
+		return x
+
+class ReducingAutoencoder(nn.Module):
 
 	def get_nearest_power_of_2(self, value):
 		index = 0
@@ -21,7 +59,7 @@ class Autoencoder(nn.Module):
 		return int(math.pow(2, index))
 
 	def __init__(self, input_size, expected_size, dropout):
-		super(Autoencoder, self).__init__()
+		super(ReducingAutoencoder, self).__init__()
 
 		nearest_2_power = self.get_nearest_power_of_2(input_size)
 		encode_list = [ nn.BatchNorm1d(input_size),
@@ -66,8 +104,15 @@ class Autoencoder(nn.Module):
 		x = self.decode(x)
 		return x
 
-def get_model(input_size, expected_size, dropout):
-	return Autoencoder(input_size, expected_size, dropout)
+def get_model(input_size, expected_size, dropout, ae_type):
+	if ae_type == "reduce":
+		return ReducingAutoencoder(input_size, expected_size,
+			dropout)
+	if ae_type == "enhance":
+		return EnhancingAutoencoder(input_size, expected_size,
+			dropout)
+	print("unknown autoencoder type: {}".format(ae_type))
+	exit()
 
 def train(model, x, epochs=25, lr=LEARNING_RATE,
 	batch_size=BATCH_SIZE):
@@ -85,7 +130,6 @@ def train(model, x, epochs=25, lr=LEARNING_RATE,
 			optimizer.zero_grad()
 			output = model(data[0])
 			loss = loss_fn(data[0], output)
-			#loss = add_reg_loss(model, loss)
 			loss.backward()
 			optimizer.step()
 			running_loss += loss.item()

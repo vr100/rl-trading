@@ -20,7 +20,8 @@ def train_evaluate_fn(data_folder, output_folder, fast_mode, params):
 	(train, test, na_value, data_scaler) = prepare_data(data_folder,
 		fast_mode, params["na_value"])
 	model = autoencoder.get_model(train.shape[1],
-		params["expected_features"], params["dropout"])
+		params["expected_features"], params["dropout"],
+		params["ae_type"])
 	model.print_details()
 	print("Training...")
 	model = autoencoder.train(model, train, epochs=params["epochs"],

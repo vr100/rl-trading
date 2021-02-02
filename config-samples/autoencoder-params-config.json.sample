@@ -4,5 +4,6 @@
 	"epochs": 30,
 	"expected_features": 64,
 	"lr": 0.001,
-	"na_value": "mean"
+	"na_value": "zero",
+	"ae_type": "enhance"
 }
