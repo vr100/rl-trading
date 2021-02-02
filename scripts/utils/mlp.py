@@ -7,8 +7,8 @@ from torch.utils.data import DataLoader, TensorDataset
 import utils.metrics as metrics_util
 import utils.misc as helper
 
-BATCH_SIZE = 512
-LEARNING_RATE = 0.0005
+BATCH_SIZE = 256
+LEARNING_RATE = 0.005
 DEVICE = "cpu"
 
 class MLP(nn.Module):
@@ -25,7 +25,7 @@ class MLP(nn.Module):
 		return nn.ReLU()
 
 	def __init__(self, input_size, expected_size,
-		layers=10, dropout=0.1):
+		layers=1, dropout=0.1):
 		super(MLP, self).__init__()
 
 		nearest_2_power = self.get_higher_power_of_2(input_size)
@@ -54,11 +54,12 @@ class MLP(nn.Module):
 def get_model(input_size, expected_size):
 	return MLP(input_size, expected_size)
 
-def train(model, x, y, epochs=25, lr=LEARNING_RATE,
+def train(model, x, y, epochs=20, lr=LEARNING_RATE,
 	batch_size=BATCH_SIZE):
 	x = helper.get_torch_representation(x,DEVICE)
 	y = helper.get_torch_representation(y, DEVICE)
-	y = torch.reshape(y, shape=(y.shape[0], 1))
+	if len(y.shape) == 1:
+		y = torch.reshape(y, shape=(y.shape[0], 1))
 	x_with_noise = helper.add_gaussian_noise(x)
 	dataset = TensorDataset(x_with_noise, y)
 	loader = DataLoader(dataset, batch_size=batch_size)
@@ -93,9 +94,11 @@ def infer(model, x, y, batch_size=BATCH_SIZE):
 	model.eval()
 	x = helper.get_torch_representation(x, DEVICE)
 	y = helper.get_torch_representation(y, DEVICE)
+	if len(y.shape) == 1:
+		y = torch.reshape(y, shape=(y.shape[0], 1))
 	dataset = TensorDataset(x)
 	loader = DataLoader(dataset, batch_size=batch_size)
-	pred = np.empty(shape=(0, 1))
+	pred = np.empty(shape=(0, y.shape[1]))
 	with torch.no_grad():
 		for data in loader:
 			output = model(data[0])
