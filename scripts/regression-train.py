@@ -21,7 +21,6 @@ def load_model(model_path):
 	return model
 
 def prepare_data(data_folder, model_path, config, fast_mode):
-	model = load_model(model_path)
 	y_cols = get_cols_for_approach(config["approach"])
 	(train, test, na_value) = dataset.read_data(data_folder,
 		fast_mode, na_value=config["na_value"])
@@ -37,11 +36,13 @@ def prepare_data(data_folder, model_path, config, fast_mode):
 	(x_test, x_scaler) = scaler.scale_data(x_test, x_scaler)
 	(y_test, y_scaler) = scaler.scale_data(y_test, y_scaler)
 
-	print("Encoding data...")
-	x_train = autoencoder.encode(model, x_train,
-		config["autoencoder_output_features"])
-	x_test = autoencoder.encode(model, x_test,
-		config["autoencoder_output_features"])
+	if model_path is not None:
+		print("Encoding data...")
+		model = load_model(model_path)
+		x_train = autoencoder.encode(model, x_train,
+			config["autoencoder_output_features"])
+		x_test = autoencoder.encode(model, x_test,
+			config["autoencoder_output_features"])
 
 	train_data = { "x": x_train, "y": y_train, "out": out_train }
 	test_data = { "x": x_test, "y": y_test, "out": out_test }
@@ -64,12 +65,14 @@ def postprocess_data(out_data, y_pred, config):
 
 def train_evaluate(data_folder, output_folder, autoencoder_path,
 	config, fast_mode):
-	y_cols = get_cols_for_approach(config["approach"])
-	model = regression.get_model(config["regression_algo"],
-		config["autoencoder_output_features"], len(y_cols))
 	print("Preparing data...")
 	(train, test, scalers, na_value) = prepare_data(data_folder,
 		autoencoder_path, config, fast_mode)
+	y_size = len(get_cols_for_approach(config["approach"]))
+	x_size = train["x"].shape[1] if autoencoder_path is None else \
+		config["autoencoder_output_features"]
+	model = regression.get_model(config["regression_algo"],
+		x_size, y_size)
 	print("Training...")
 	model = regression.train(model, train["x"], train["y"])
 	print("Evaluating...")
@@ -113,7 +116,7 @@ def parse_args():
 		required=True)
 	parser.add_argument(
 		"--autoencoder_path", type=str, help="specifies the autoencoder model path",
-		required=True)
+		required=False, default=None)
 	parser.add_argument(
 		"--fast_mode", default=False,
 		type=lambda s: s.lower() in ['true', 'yes', '1'],
@@ -126,7 +129,8 @@ def main():
 	data_path = os.path.abspath(args["data_path"])
 	output_path = os.path.abspath(args["output_path"])
 	config_path = os.path.abspath(args["config_path"])
-	autoencoder_path = os.path.abspath(args["autoencoder_path"])
+	autoencoder_path = None if args["autoencoder_path"] is None else \
+		os.path.abspath(args["autoencoder_path"])
 	fast_mode = args["fast_mode"]
 	with open(config_path, "r") as json_file:
 		config = json.load(json_file)
