@@ -1,9 +1,9 @@
 import argparse, os, json, joblib, torch
-from utils import regression, dataset, autoencoder
+from utils import regression, dataset, autoencoder, scaler
 
 X_SKIP_COLS = ["date", "weight", "ts_id", "resp", "resp_1", "resp_2", "resp_3", "resp_4"]
 Y_OUTPUT_COLS = ["date", "ts_id"]
-METRICS_INFO = ["mse", "r2", "mae"]
+METRICS_INFO = ["mse", "rmse", "r2", "ev", "mae", "mape"]
 
 def get_cols_for_approach(approach):
 	if approach == 1:
@@ -24,7 +24,7 @@ def prepare_data(data_folder, model_path, config, fast_mode):
 	model = load_model(model_path)
 	y_cols = get_cols_for_approach(config["approach"])
 	(train, test, na_value) = dataset.read_data(data_folder,
-		fast_mode)
+		fast_mode, na_value=config["na_value"])
 	x_train = train.drop(X_SKIP_COLS, axis=1)
 	y_train = train[y_cols]
 	x_test = test.drop(X_SKIP_COLS, axis=1)
@@ -32,12 +32,22 @@ def prepare_data(data_folder, model_path, config, fast_mode):
 	out_train = train[Y_OUTPUT_COLS]
 	out_test = test[Y_OUTPUT_COLS]
 
+	(x_train, x_scaler) = scaler.scale_data(x_train)
+	(y_train, y_scaler) = scaler.scale_data(y_train)
+	(x_test, x_scaler) = scaler.scale_data(x_test, x_scaler)
+	(y_test, y_scaler) = scaler.scale_data(y_test, y_scaler)
+
 	print("Encoding data...")
 	x_train = autoencoder.encode(model, x_train,
 		config["autoencoder_output_features"])
 	x_test = autoencoder.encode(model, x_test,
 		config["autoencoder_output_features"])
-	return (x_train, x_test, y_train, y_test, out_train, out_test, na_value)
+
+	train_data = { "x": x_train, "y": y_train, "out": out_train }
+	test_data = { "x": x_test, "y": y_test, "out": out_test }
+	data_scaler = { "x": x_scaler, "y": y_scaler }
+
+	return (train_data, test_data, data_scaler, na_value)
 
 def postprocess_data(out_data, y_pred, config):
 	y_cols = get_cols_for_approach(config["approach"])
@@ -54,17 +64,19 @@ def postprocess_data(out_data, y_pred, config):
 
 def train_evaluate(data_folder, output_folder, autoencoder_path,
 	config, fast_mode):
-	model = regression.get_model(config["regression_algo"])
+	y_cols = get_cols_for_approach(config["approach"])
+	model = regression.get_model(config["regression_algo"],
+		config["autoencoder_output_features"], len(y_cols))
 	print("Preparing data...")
-	(x, x_test, y, y_test, out, out_test, na_value) = prepare_data(
-		data_folder, autoencoder_path, config, fast_mode)
+	(train, test, scalers, na_value) = prepare_data(data_folder,
+		autoencoder_path, config, fast_mode)
 	print("Training...")
-	model = regression.train(model, x, y)
+	model = regression.train(model, train["x"], train["y"])
 	print("Evaluating...")
-	(y_pred, metrics) = regression.evaluate(model, x_test, y_test,
-		METRICS_INFO)
+	(y_pred, metrics) = regression.evaluate(model, test["x"],
+		test["y"], METRICS_INFO)
 	print("Postprocessing data...")
-	y_output = postprocess_data(out_test, y_pred, config)
+	y_output = postprocess_data(test["out"], y_pred, config)
 
 	output_path = os.path.join(output_folder, "pred.csv")
 	y_output.to_csv(output_path, index=False)
@@ -79,6 +91,12 @@ def train_evaluate(data_folder, output_folder, autoencoder_path,
 	model_path = os.path.join(output_folder, "{}-approach-{}.joblib".format(
 		config["regression_algo"], config["approach"]))
 	joblib.dump(model, model_path)
+
+	x_scaler_path = os.path.join(output_folder, "x-scaler.joblib")
+	joblib.dump(scalers["x"], x_scaler_path)
+	y_scaler_path = os.path.join(output_folder, "y-scaler.joblib")
+	joblib.dump(scalers["y"], y_scaler_path)
+
 	print("Output files (model, result, prediction) saved to {}".format(
 		output_folder))
 

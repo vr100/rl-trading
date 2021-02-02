@@ -3,10 +3,12 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPRegressor
-from . import metrics as metrics_util
+import utils.metrics as metrics_util
+import utils.mlp as mlp
+import utils.misc as helper
 import numpy as np
 
-def get_model(reg_type):
+def get_model(reg_type, x_size, y_size):
 	if reg_type == "linear":
 		return LinearRegression()
 	elif reg_type == "kneighbor":
@@ -16,38 +18,22 @@ def get_model(reg_type):
 	elif reg_type == "randomforest":
 		return RandomForestRegressor()
 	elif reg_type == "mlp":
-		return MLPRegressor(hidden_layer_sizes=150,
-			learning_rate="adaptive", learning_rate_init=0.0005,
-			alpha=0.001)
+		return mlp.get_model(x_size, y_size)
 	else:
 		print("unknown regression model type {}".format(reg_type))
 		exit(-1)
 
 def train(model, x, y):
+	if isinstance(model, mlp.MLP):
+		return mlp.train(model, x, y)
+	x = helper.add_gaussian_noise(x)
 	model.fit(x, y)
 	return model
 
-def batch_evaluate(model, x, y, metrics):
-	print("predicting..")
-	y_pred = np.empty(shape=(0, y.shape[1]))
-	start = 0
-	batch_size = 1024
-	while start < len(x):
-		print("Evaluating {}".format(start))
-		end = (start + batch_size) if (start + batch_size) < len(x) else len(x)
-		x_batch = x[start:end]
-		output = model.predict(x_batch)
-		y_pred = np.append(y_pred, output)
-		start = end
-	print("getting metrics..")
-	metrics_info = metrics_util.compute_metrics(y, y_pred, metrics,
-		multioutput="raw_values")
-	return (y_pred, metrics_info)
-
 def evaluate(model, x, y, metrics):
-	print("predicting..")
+	if isinstance(model, mlp.MLP):
+		return mlp.evaluate(model, x, y, metrics)
 	y_pred = model.predict(x)
-	print("getting metrics..")
 	metrics_info = metrics_util.compute_metrics(y, y_pred, metrics,
 		multioutput="raw_values")
 	return (y_pred, metrics_info)

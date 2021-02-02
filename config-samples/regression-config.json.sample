@@ -1,5 +1,6 @@
 {
 	"approach": 1,
 	"regression_algo": "mlp",
-	"autoencoder_output_features": 64
+	"autoencoder_output_features": 64,
+	"na_value": "mean"
 }

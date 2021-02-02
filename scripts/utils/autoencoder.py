@@ -5,11 +5,11 @@ import pandas as pd
 import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
 import utils.metrics as metrics_util
+import utils.misc as helper
 
 BATCH_SIZE = 256
 LEARNING_RATE = 0.001
 DEVICE = "cpu"
-L1_WEIGHT_DECAY = 0.001
 
 class Autoencoder(nn.Module):
 
@@ -69,17 +69,11 @@ class Autoencoder(nn.Module):
 def get_model(input_size, expected_size, dropout):
 	return Autoencoder(input_size, expected_size, dropout)
 
-def add_reg_loss(model, loss):
-	encode_params = torch.cat([x.view(-1) for x in model.encode.parameters()])
-	decode_params = torch.cat([x.view(-1) for x in model.decode.parameters()])
-	encode_l1_reg = L1_WEIGHT_DECAY * torch.norm(encode_params, 1)
-	decode_l1_reg = L1_WEIGHT_DECAY * torch.norm(decode_params, 1)
-	return loss + encode_l1_reg + decode_l1_reg
-
 def train(model, x, epochs=25, lr=LEARNING_RATE,
 	batch_size=BATCH_SIZE):
-	x = torch.from_numpy(x.to_numpy()).to(DEVICE).float()
-	dataset = TensorDataset(x)
+	x = helper.get_torch_representation(x, DEVICE)
+	x_with_noise = helper.add_gaussian_noise(x)
+	dataset = TensorDataset(x_with_noise)
 	loader = DataLoader(dataset, batch_size=batch_size)
 	loss_fn = nn.MSELoss()
 	optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -109,7 +103,7 @@ def evaluate(model, x, metrics, batch_size=BATCH_SIZE):
 
 def infer(model, x, batch_size=BATCH_SIZE):
 	model.eval()
-	x = torch.from_numpy(x.to_numpy()).to(DEVICE).float()
+	x = helper.get_torch_representation(x, DEVICE)
 	dataset = TensorDataset(x)
 	loader = DataLoader(dataset, batch_size=batch_size)
 	pred = np.empty(shape=(0, x.shape[1]))
@@ -121,7 +115,7 @@ def infer(model, x, batch_size=BATCH_SIZE):
 
 def encode(model, x, output_size, batch_size=BATCH_SIZE):
 	model.eval()
-	x = torch.from_numpy(x.to_numpy()).to(DEVICE).float()
+	x = helper.get_torch_representation(x, DEVICE)
 	dataset = TensorDataset(x)
 	loader = DataLoader(dataset, batch_size=batch_size)
 	encoded_x = np.empty(shape=(0, output_size))

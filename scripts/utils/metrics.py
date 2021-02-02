@@ -1,4 +1,4 @@
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, mean_absolute_percentage_error, explained_variance_score
 
 def compute_metrics(actual, pred, metric_names, multioutput="uniform_average"):
 	metrics = {}
@@ -21,4 +21,7 @@ def compute_metrics(actual, pred, metric_names, multioutput="uniform_average"):
 			mape = mean_absolute_percentage_error(actual, pred,
 				multioutput=multioutput)
 			metrics[m] = mape.tolist()
+		elif m == "ev":
+			ev = explained_variance_score(actual, pred, multioutput=multioutput)
+			metrics[m] = ev.tolist()
 	return metrics

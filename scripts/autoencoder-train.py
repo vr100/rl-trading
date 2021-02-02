@@ -1,22 +1,24 @@
-from utils import autoencoder, dataset, hyperparams
-import argparse, os, torch, json, uuid
+from utils import autoencoder, dataset, hyperparams, scaler
+import argparse, os, torch, json, uuid, joblib
 
 X_SKIP_COLS = ["date", "weight", "ts_id", "resp", "resp_1", "resp_2", "resp_3", "resp_4"]
-METRICS_INFO = ["mse", "r2", "mae"]
+METRICS_INFO = ["mse", "r2", "mae", "mape", "ev"]
 
 def prepare_data(data_folder, fast_mode, na_value):
 	(train, test, na_value) = dataset.read_data(data_folder,
 		fast_mode=fast_mode, na_value=na_value)
 	x_train = train.drop(X_SKIP_COLS, axis=1)
 	x_test = test.drop(X_SKIP_COLS, axis=1)
-	return (x_train, x_test, na_value)
+	(x_train, data_scaler) = scaler.scale_data(x_train)
+	(x_test, data_scaler) = scaler.scale_data(x_test, data_scaler)
+	return (x_train, x_test, na_value, data_scaler)
 
 def train_evaluate_fn(data_folder, output_folder, fast_mode, params):
 	output_folder = os.path.join(output_folder, uuid.uuid4().hex)
 	os.mkdir(output_folder)
 	print("Preparing data...")
-	(train, test, na_value) = prepare_data(data_folder, fast_mode,
-		params["na_value"])
+	(train, test, na_value, data_scaler) = prepare_data(data_folder,
+		fast_mode, params["na_value"])
 	model = autoencoder.get_model(train.shape[1],
 		params["expected_features"], params["dropout"])
 	model.print_details()
@@ -39,6 +41,8 @@ def train_evaluate_fn(data_folder, output_folder, fast_mode, params):
 		params_file.write(json_config)
 	model_path = os.path.join(output_folder, "autoencoder.mdl")
 	torch.save(model, model_path)
+	scaler_path = os.path.join(output_folder, "x-scaler.joblib")
+	joblib.dump(data_scaler, scaler_path)
 	print("Output files (model, result) saved to {}".format(
 		output_folder))
 
