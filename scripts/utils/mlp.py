@@ -22,10 +22,10 @@ class MLP(nn.Module):
 		return int(math.pow(2, index))
 
 	def activation_layer(self):
-		return nn.ReLU()
+		return nn.LeakyReLU()
 
 	def __init__(self, input_size, expected_size,
-		layers=1, dropout=0.1):
+		layers=1, dropout=0.5):
 		super(MLP, self).__init__()
 
 		nearest_2_power = self.get_higher_power_of_2(input_size)
@@ -34,13 +34,16 @@ class MLP(nn.Module):
 		for i in range(layers):
 			enc = nn.Linear(in_features=size, out_features=size)
 			layer_list.extend([self.activation_layer(),
-				nn.Dropout(dropout), nn.BatchNorm1d(size), enc])
+				nn.Dropout(dropout),
+				nn.BatchNorm1d(size), enc])
 		enc = nn.Linear(in_features=size, out_features=input_size)
 		layer_list.extend([self.activation_layer(),
-				nn.Dropout(dropout), nn.BatchNorm1d(size), enc])
+				nn.Dropout(dropout),
+				nn.BatchNorm1d(size), enc])
 		enc = nn.Linear(in_features=input_size, out_features=expected_size)
 		layer_list.extend([self.activation_layer(),
-				nn.Dropout(dropout), nn.BatchNorm1d(input_size), enc])
+				nn.Dropout(dropout),
+				nn.BatchNorm1d(input_size), enc])
 		self.layers = nn.Sequential(*layer_list)
 		self.print_details()
 
@@ -65,7 +68,7 @@ def train(model, x, y, epochs=20, lr=LEARNING_RATE,
 	loader = DataLoader(dataset, batch_size=batch_size)
 	loss_fn = nn.MSELoss()
 	optimizer = optim.Adam(model.parameters(), lr=lr,
-		weight_decay=0.1)
+		weight_decay=0.005)
 	model.train()
 	for i in range(epochs):
 		running_loss = 0.0

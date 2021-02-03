@@ -7,8 +7,10 @@ def get_scaler(scaler_type):
 		return StandardScaler()
 	if scaler_type == "quantile":
 		return QuantileTransformer()
-	if scaler_typer == "power":
+	if scaler_type == "power":
 		return PowerTransformer()
+	print("unknown scaler type {}".format(scaler_type))
+	exit()
 
 def scale_data(data, scaler=None, scaler_type="quantile"):
 	output_data = data.copy()
