@@ -1,0 +1,7 @@
+{
+	"trail_count": 50,
+	"random_state": 0,
+	"y_columns": [ "resp" ],
+	"x_skip_columns": ["date", "weight", "ts_id", "resp", "resp_1", "resp_2", "resp_3", "resp_4"],
+	"na_value": "zero"
+}
