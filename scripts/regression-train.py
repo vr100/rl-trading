@@ -72,7 +72,7 @@ def train_evaluate(data_folder, output_folder, autoencoder_path,
 	x_size = train["x"].shape[1] if autoencoder_path is None else \
 		config["autoencoder_output_features"]
 	model = regression.get_model(config["regression_algo"],
-		x_size, y_size)
+		x_size, y_size, config["job_count"])
 	print("Training...")
 	model = regression.train(model, train["x"], train["y"])
 	print("Evaluating...")

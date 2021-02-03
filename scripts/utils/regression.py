@@ -1,4 +1,4 @@
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
@@ -8,15 +8,22 @@ import utils.mlp as mlp
 import utils.misc as helper
 import numpy as np
 
-def get_model(reg_type, x_size, y_size):
+def get_model(reg_type, x_size, y_size, job_count):
 	if reg_type == "linear":
 		return LinearRegression()
+	elif reg_type == "ridge":
+		return Ridge()
+	elif reg_type == "lasso":
+		return Lasso()
+	elif reg_type == "elastic":
+		return ElasticNet()
 	elif reg_type == "kneighbor":
 		return KNeighborsRegressor()
 	elif reg_type == "decisiontree":
 		return DecisionTreeRegressor()
 	elif reg_type == "randomforest":
-		return RandomForestRegressor()
+		return RandomForestRegressor(n_jobs=job_count,
+			max_depth=20, random_state=0)
 	elif reg_type == "mlp":
 		return mlp.get_model(x_size, y_size)
 	else:

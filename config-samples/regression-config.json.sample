@@ -2,5 +2,6 @@
 	"approach": 1,
 	"regression_algo": "mlp",
 	"autoencoder_output_features": 64,
-	"na_value": "mean"
+	"na_value": "mean",
+	"job_count": 1
 }

@@ -12,7 +12,7 @@ def get_scaler(scaler_type):
 	print("unknown scaler type {}".format(scaler_type))
 	exit()
 
-def scale_data(data, scaler=None, scaler_type="quantile"):
+def scale_data(data, scaler=None, scaler_type="standard"):
 	output_data = data.copy()
 	if scaler is None:
 		scaler = get_scaler(scaler_type)
