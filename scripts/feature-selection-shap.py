@@ -1,7 +1,7 @@
-import os, argparse, json
+import os, argparse, json, shap
 import pandas as pd
-from boruta import BorutaPy
 from utils import dataset
+import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
 
 def prepare_data(data_folder, fast_mode, config):
@@ -22,32 +22,39 @@ def select_feature(data_folder, output_folder, config, fast_mode):
 	print("Preparing data...")
 	(train, test, na_value) = prepare_data(data_folder, fast_mode,
 		config)
-	print("Running feature selection...")
+	print("Training model...")
 	model = RandomForestRegressor(n_jobs=config["job_count"],
 			max_depth=config["max_depth"],
 			random_state=config["random_state"])
-	feature_selector =  BorutaPy(model, n_estimators="auto",
-		verbose=2, random_state=config["random_state"],
-		max_iter=config["max_iter"])
-	print("Fitting feature selection...")
-	feature_selector.fit(train["x"], train["y"])
-	print("Getting the result...")
-	result = {
-		"selected_count": feature_selector.n_features_,
-		"selected_features": feature_selector.support_.tolist(),
-		"weak_features": feature_selector.support_weak_.tolist(),
-		"ranking": feature_selector.ranking_.tolist()
-	}
-	result_path = os.path.join(output_folder, "result.json")
-	json_result = json.dumps(result, indent=4)
-	with open(result_path, "w") as result_file:
-		result_file.write(json_result)
-	print("Result: {}".format(json_result))
-	print("Result saved to {}".format(result_path))
+	model.fit(train["x"], train["y"])
+	print("Running feature selection...")
+	explainer = shap.TreeExplainer(model, train["x"])
+	shap_values = explainer(train["x"])
+	print("Getting the plots...")
+	plot_path = os.path.join(output_folder, "training-predictions.jpg")
+	shap.force_plot(explainer.expected_value, shap_values,
+		train["x"], show=False)
+	plt.savefig(plot_path, format="jpg", dpi=200,
+		bbox_inches="tight")
+	for col in range(train["x"].shape[1]):
+		plot_path = os.path.join(output_folder, "col-{}.jpg".format(col))
+		shap.dependence_plot(col, shap_values, train["x"],
+			show=False)
+		plt.savefig(plot_path, foramt="jpg", dpi=200,
+			bbox_inches="tight")
+	plot_path = os.path.join(output_folder, "summary.jpg")
+	shap.summary_plot(shap_values, train["x"], plot_type="bar")
+	plt.savefig(plot_path, foramt="jpg", dpi=200, bbox_inches="tight")
+	plot_path = os.path.join(output_folder, "bar-plot.jpg")
+	shap.plots.bar(shap_values, max_display=20)
+	plt.savefig(plot_path, foramt="jpg", dpi=200, bbox_inches="tight")
 
-	x_train = feature_selector.transform(train["x"])
-	print(x_train[20:])
-
+	print("Clustering...")
+	clustering = shap.utils.hclust(train["x"], train["y"])
+	plot_path = os.path.join(output_folder, "bar-clustering.jpg")
+	shap.plots.bar(shap_values, clustering=clustering)
+	plt.savefig(plot_path, foramt="jpg", dpi=200, bbox_inches="tight")
+	print("Saved all plots to {}".format(output_folder))
 
 def parse_args():
 	parser = argparse.ArgumentParser()
