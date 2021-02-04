@@ -1,16 +1,19 @@
 import os, argparse, json
 import pandas as pd
-from BorutaShap import BorutaShap
+from boruta import BorutaPy
 from utils import dataset
 from sklearn.ensemble import RandomForestRegressor
 
 def prepare_data(data_folder, fast_mode, config):
 	(train, test, na_value) = dataset.read_data(data_folder,
 		fast_mode=fast_mode, na_value=config["na_value"])
-	x_train = train.drop(config["x_skip_columns"], axis=1)
-	x_test = test.drop(config["x_skip_columns"], axis=1)
-	y_train = train[config["y_columns"]]
-	y_test = test[config["y_columns"]]
+	x_train = train.drop(config["x_skip_columns"], axis=1).to_numpy()
+	x_test = test.drop(config["x_skip_columns"], axis=1).to_numpy()
+	y_train = train[config["y_columns"]].to_numpy()
+	y_test = test[config["y_columns"]].to_numpy()
+	if len(config["y_columns"]) == 1:
+		y_train = y_train.ravel()
+		y_test  = y_test.ravel()
 	train = { "x": x_train, "y": y_train }
 	test = { "x": x_test, "y": y_test }
 	return (train, test, na_value)
@@ -21,23 +24,31 @@ def select_feature(data_folder, output_folder, config, fast_mode):
 		config)
 	print("Running feature selection...")
 	model = RandomForestRegressor(n_jobs=config["job_count"],
-			max_depth=20, random_state=config["random_state"])
-	feature_selector = BorutaShap(importance_measure="shap",
-		classification=False, model=model)
+			max_depth=config["max_depth"],
+			random_state=config["random_state"],
+			max_iter=config["max_iter"])
+	feature_selector =  BorutaPy(model, n_estimators="auto",
+		verbose=2, random_state=config["random_state"])
 	print("Fitting feature selection...")
-	feature_selector.fit(X=train["x"],
-		y=train["y"].to_numpy(),
-		n_trials=config["trail_count"],
-		random_state=config["random_state"],
-		verbose=True, normalize=True, sample=False)
-	print("Getting the plot...")
-	box_plot = feature_selector.plot(which_features="all",
-		figsize=(16,12))
-	output_path = os.path.join(output_folder, "feature-plot.jpg")
-	box_plot.figure.savefig(output_path, format="jpeg", dpi=100)
-	subset = feature_selector.Subset()
-	print(subset.head())
-	print(len(subset))
+	feature_selector.fit(train["x"], train["y"])
+	print("Getting the result...")
+	result = {
+		"selected_count": feature_selector.n_features_,
+		"selected_features": feature_selector.support_.tolist(),
+		"weak_features": feature_selector.support_weak_.tolist(),
+		"ranking": feature_selector.ranking_.tolist(),
+		"importance_history": feature_selector.importance_history_.tolist()
+	}
+	result_path = os.path.join(output_folder, "result.json")
+	json_result = json.dumps(result, indent=4)
+	with open(result_path, "w") as result_file:
+		result_file.write(json_result)
+	print("Result: {}".format(json_result))
+	print("Result saved to {}".format(result_path))
+
+	x_train = feature_selector.transform(train["x"])
+	print(x_train[20:])
+
 
 def parse_args():
 	parser = argparse.ArgumentParser()
