@@ -31,29 +31,23 @@ def select_feature(data_folder, output_folder, config, fast_mode):
 	explainer = shap.TreeExplainer(model, train["x"])
 	shap_values = explainer(train["x"])
 	print("Getting the plots...")
-	plot_path = os.path.join(output_folder, "training-predictions.jpg")
-	shap.force_plot(explainer.expected_value, shap_values,
-		train["x"], show=False)
-	plt.savefig(plot_path, format="jpg", dpi=200,
-		bbox_inches="tight")
-	for col in range(train["x"].shape[1]):
-		plot_path = os.path.join(output_folder, "col-{}.jpg".format(col))
-		shap.dependence_plot(col, shap_values, train["x"],
-			show=False)
-		plt.savefig(plot_path, foramt="jpg", dpi=200,
-			bbox_inches="tight")
-	plot_path = os.path.join(output_folder, "summary.jpg")
+	plot_path = os.path.join(output_folder, "summary-bar.jpg")
 	shap.summary_plot(shap_values, train["x"], plot_type="bar")
-	plt.savefig(plot_path, foramt="jpg", dpi=200, bbox_inches="tight")
-	plot_path = os.path.join(output_folder, "bar-plot.jpg")
-	shap.plots.bar(shap_values, max_display=20)
-	plt.savefig(plot_path, foramt="jpg", dpi=200, bbox_inches="tight")
+	plt.savefig(plot_path, format="jpg", dpi=200, bbox_inches="tight")
+	plt.close()
+	plot_path = os.path.join(output_folder, "summary.jpg")
+	shap.summary_plot(shap_values, train["x"])
+	plt.savefig(plot_path, format="jpg", dpi=200, bbox_inches="tight")
+	plt.close()
 
-	print("Clustering...")
-	clustering = shap.utils.hclust(train["x"], train["y"])
-	plot_path = os.path.join(output_folder, "bar-clustering.jpg")
-	shap.plots.bar(shap_values, clustering=clustering)
-	plt.savefig(plot_path, foramt="jpg", dpi=200, bbox_inches="tight")
+	for index in range(shap_values.shape[1]):
+		plot_path = os.path.join(output_folder,
+			"index-{}.jpg".format(index))
+		shap.plots.scatter(shap_values[:,index])
+		plt.savefig(plot_path, format="jpg", dpi=200,
+			bbox_inches="tight")
+		plt.close()
+
 	print("Saved all plots to {}".format(output_folder))
 
 def parse_args():
