@@ -25,10 +25,10 @@ def select_feature(data_folder, output_folder, config, fast_mode):
 	print("Running feature selection...")
 	model = RandomForestRegressor(n_jobs=config["job_count"],
 			max_depth=config["max_depth"],
-			random_state=config["random_state"]
+			random_state=config["random_state"])
 	feature_selector =  BorutaPy(model, n_estimators="auto",
 		verbose=2, random_state=config["random_state"],
-		max_iter=config["max_iter"]))
+		max_iter=config["max_iter"])
 	print("Fitting feature selection...")
 	feature_selector.fit(train["x"], train["y"])
 	print("Getting the result...")
