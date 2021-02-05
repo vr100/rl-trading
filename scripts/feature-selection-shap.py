@@ -34,11 +34,13 @@ def select_feature(data_folder, output_folder, config, fast_mode,
 	shap_values = explainer(train["x"])
 	print("Getting the plots...")
 	plot_path = os.path.join(output_folder, "summary-bar.jpg")
-	shap.summary_plot(shap_values, train["x"], plot_type="bar")
+	shap.summary_plot(shap_values, train["x"], plot_type="bar",
+		max_display=shap_values.shape[1])
 	plt.savefig(plot_path, format="jpg", dpi=200, bbox_inches="tight")
 	plt.close()
 	plot_path = os.path.join(output_folder, "summary.jpg")
-	shap.summary_plot(shap_values, train["x"])
+	shap.summary_plot(shap_values, train["x"],
+		max_display=shap_values.shape[1])
 	plt.savefig(plot_path, format="jpg", dpi=200, bbox_inches="tight")
 	plt.close()
 
@@ -49,6 +51,14 @@ def select_feature(data_folder, output_folder, config, fast_mode,
 		plt.savefig(plot_path, format="jpg", dpi=200,
 			bbox_inches="tight")
 		plt.close()
+
+	params = config.copy()
+	params["fast_mode"] = fast_mode
+	params["random_mode"] = random_mode
+	params_path = os.path.join(output_folder, "params.json")
+	json_config = json.dumps(params, indent=4)
+	with open(params_path, "w") as params_file:
+		params_file.write(json_config)
 
 	print("Saved all plots to {}".format(output_folder))
 
