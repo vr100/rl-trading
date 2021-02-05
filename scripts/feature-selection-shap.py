@@ -4,9 +4,10 @@ from utils import dataset
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
 
-def prepare_data(data_folder, fast_mode, config):
+def prepare_data(data_folder, fast_mode, random_mode, config):
 	(train, test, na_value) = dataset.read_data(data_folder,
-		fast_mode=fast_mode, na_value=config["na_value"])
+		fast_mode=fast_mode, na_value=config["na_value"],
+		random_mode=random_mode)
 	x_train = train.drop(config["x_skip_columns"], axis=1).to_numpy()
 	x_test = test.drop(config["x_skip_columns"], axis=1).to_numpy()
 	y_train = train[config["y_columns"]].to_numpy()
@@ -18,10 +19,11 @@ def prepare_data(data_folder, fast_mode, config):
 	test = { "x": x_test, "y": y_test }
 	return (train, test, na_value)
 
-def select_feature(data_folder, output_folder, config, fast_mode):
+def select_feature(data_folder, output_folder, config, fast_mode,
+	random_mode):
 	print("Preparing data...")
 	(train, test, na_value) = prepare_data(data_folder, fast_mode,
-		config)
+		random_mode, config)
 	print("Training model...")
 	model = RandomForestRegressor(n_jobs=config["job_count"],
 			max_depth=config["max_depth"],
@@ -65,6 +67,9 @@ def parse_args():
 		"--fast_mode", default=False,
 		type=lambda s: s.lower() in ['true', 'yes', '1'],
 		help="specifies whether only a sample subset should be run")
+	parser.add_argument(
+		"--random_mode", default=0, type=int,
+		help="specifies the random sample count")
 	return vars(parser.parse_args())
 
 def main():
@@ -73,9 +78,11 @@ def main():
 	data_path = os.path.abspath(args["data_path"])
 	output_path = os.path.abspath(args["output_path"])
 	config_path = os.path.abspath(args["config_path"])
+	random_mode = args["random_mode"]
 	fast_mode = args["fast_mode"]
 	with open(config_path, "r") as json_file:
 		config = json.load(json_file)
-	select_feature(data_path, output_path, config, fast_mode)
+	select_feature(data_path, output_path, config, fast_mode,
+		random_mode)
 
 main()

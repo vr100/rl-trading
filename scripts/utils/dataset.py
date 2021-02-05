@@ -1,5 +1,5 @@
 import pandas as pd
-import os, random, math
+import os, random, math, csv
 from pandas.core.series import Series
 
 # mode to read just top few entries of the data file
@@ -7,15 +7,88 @@ FAST_MODE = False
 TRAIN_ROWS = 100000
 TEST_ROWS = 20000
 
-def read_data(data_folder, fast_mode=FAST_MODE, na_value=None):
+RANDOM_SECTION_LENGTH = 50000
+
+def compute_step(random_sections, random_count):
+	if random_sections <= 0:
+		return 0
+	step = 1
+	element_per_section = random_count / random_sections
+	while element_per_section < 1:
+		step = step * 2
+		actual_sections = math.floor(random_sections / step)
+		element_per_section = random_count / actual_sections
+	return step
+
+def get_count(sections, step, random_count):
+	actual_sections = math.floor(sections / step)
+	if actual_sections == 0:
+		actual_sections = 1
+	element_per_section = random_count / actual_sections
+	floor_elements = math.floor(element_per_section)
+	# if decimal value >= .5 choose ceil, else floor
+	if math.floor(element_per_section * 2) > math.floor(floor_elements * 2):
+		return math.ceil(element_per_section)
+	else:
+		return floor_elements
+
+def get_random_section_index(index, step):
+	if step == 1:
+		return index
+	return index + random.randrange(step)
+
+def get_record_count(file_path):
+	with open(file_path, "r") as csv_file:
+		sniffer = csv.Sniffer()
+		has_header = sniffer.has_header(csv_file.readline())
+		if not has_header:
+			csv_file.seek(0)
+		record_count = sum(1 for line in csv_file)
+		print("has header: {}, record count: {}".format(
+			has_header, record_count))
+		return (has_header, record_count)
+	return (False, 0)
+
+def read_random_data(file_path, random_count,
+	section_length=RANDOM_SECTION_LENGTH):
+	(has_header, record_count) = get_record_count(file_path)
+	random_sections = math.floor(record_count / section_length)
+	step = compute_step(random_sections, random_count)
+	total_count = 0
+	random_data = pd.DataFrame()
+	print("Sections: {}, Step: {}".format(random_sections, step))
+	for index in range(0, random_sections, step):
+		random_index = get_random_section_index(index, step)
+		skiprows = random_index * section_length
+		if has_header:
+			skiprows = range(1, skiprows + 1)
+		data = pd.read_csv(file_path, skiprows=skiprows,
+			nrows=section_length)
+		section_count = get_count(random_sections - index,
+			step, random_count - total_count)
+		total_count = total_count + section_count
+		random_list = random.sample(range(0, len(data)), section_count)
+		chosen_data = data.iloc[random_list].copy()
+		random_data = random_data.append(chosen_data, ignore_index=True)
+	print("Required length: {}, actual length: {}".format(
+		random_count, len(random_data)))
+	return random_data
+
+def read_data(data_folder, fast_mode=FAST_MODE, na_value=None,
+	random_mode=0):
 	train_path = os.path.join(data_folder, "train.csv")
-	if fast_mode:
+	if random_mode > 0:
+		train = read_random_data(train_path, random_mode)
+	elif fast_mode:
 		train = pd.read_csv(train_path, nrows=TRAIN_ROWS)
 	else:
 		train = pd.read_csv(train_path)
 
 	test_path = os.path.join(data_folder, "test.csv")
-	if fast_mode:
+	if random_mode > 0:
+		test_count = math.ceil(0.2 * random_mode)
+		test = read_random_data(test_path, test_count)
+	elif fast_mode:
 		test = pd.read_csv(test_path, nrows=TEST_ROWS)
 	else:
 		test = pd.read_csv(test_path)
