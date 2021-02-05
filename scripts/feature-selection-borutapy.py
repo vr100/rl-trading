@@ -1,12 +1,14 @@
 import os, argparse, json
 import pandas as pd
+import numpy as np
 from boruta import BorutaPy
 from utils import dataset
 from sklearn.ensemble import RandomForestRegressor
 
-def prepare_data(data_folder, fast_mode, config):
+def prepare_data(data_folder, fast_mode, random_mode, config):
 	(train, test, na_value) = dataset.read_data(data_folder,
-		fast_mode=fast_mode, na_value=config["na_value"])
+		fast_mode=fast_mode, na_value=config["na_value"],
+		random_mode=random_mode)
 	x_train = train.drop(config["x_skip_columns"], axis=1).to_numpy()
 	x_test = test.drop(config["x_skip_columns"], axis=1).to_numpy()
 	y_train = train[config["y_columns"]].to_numpy()
@@ -18,10 +20,11 @@ def prepare_data(data_folder, fast_mode, config):
 	test = { "x": x_test, "y": y_test }
 	return (train, test, na_value)
 
-def select_feature(data_folder, output_folder, config, fast_mode):
+def select_feature(data_folder, output_folder, config, fast_mode,
+	random_mode):
 	print("Preparing data...")
 	(train, test, na_value) = prepare_data(data_folder, fast_mode,
-		config)
+		random_mode, config)
 	print("Running feature selection...")
 	model = RandomForestRegressor(n_jobs=config["job_count"],
 			max_depth=config["max_depth"],
@@ -35,6 +38,8 @@ def select_feature(data_folder, output_folder, config, fast_mode):
 	result = {
 		"selected_count": feature_selector.n_features_,
 		"selected_features": feature_selector.support_.tolist(),
+		"selected_feature_indices": np.where(
+			feature_selector.support_ == True)[0].tolist(),
 		"weak_features": feature_selector.support_weak_.tolist(),
 		"ranking": feature_selector.ranking_.tolist()
 	}
@@ -42,12 +47,16 @@ def select_feature(data_folder, output_folder, config, fast_mode):
 	json_result = json.dumps(result, indent=4)
 	with open(result_path, "w") as result_file:
 		result_file.write(json_result)
-	print("Result: {}".format(json_result))
 	print("Result saved to {}".format(result_path))
 
-	x_train = feature_selector.transform(train["x"])
-	print(x_train[20:])
-
+	params = config.copy()
+	params["fast_mode"] = fast_mode
+	params["random_mode"] = random_mode
+	params_path = os.path.join(output_folder, "params.json")
+	json_config = json.dumps(params, indent=4)
+	with open(params_path, "w") as params_file:
+		params_file.write(json_config)
+	print("Input params saved to {}".format(params_path))
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -64,6 +73,9 @@ def parse_args():
 		"--fast_mode", default=False,
 		type=lambda s: s.lower() in ['true', 'yes', '1'],
 		help="specifies whether only a sample subset should be run")
+	parser.add_argument(
+		"--random_mode", default=0, type=int,
+		help="specifies the random sample count")
 	return vars(parser.parse_args())
 
 def main():
@@ -73,8 +85,10 @@ def main():
 	output_path = os.path.abspath(args["output_path"])
 	config_path = os.path.abspath(args["config_path"])
 	fast_mode = args["fast_mode"]
+	random_mode = args["random_mode"]
 	with open(config_path, "r") as json_file:
 		config = json.load(json_file)
-	select_feature(data_path, output_path, config, fast_mode)
+	select_feature(data_path, output_path, config, fast_mode,
+		random_mode)
 
 main()

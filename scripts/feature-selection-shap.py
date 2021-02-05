@@ -1,5 +1,6 @@
 import os, argparse, json, shap
 import pandas as pd
+import numpy as np
 from utils import dataset
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
@@ -59,6 +60,16 @@ def select_feature(data_folder, output_folder, config, fast_mode,
 	json_config = json.dumps(params, indent=4)
 	with open(params_path, "w") as params_file:
 		params_file.write(json_config)
+
+	values = np.absolute(shap_values.values).mean(axis=0)
+	result = { 
+		"values": values.tolist(),
+		"sorted_indices": np.argsort(values).tolist()
+	}
+	result_path = os.path.join(output_folder, "result.json")
+	json_result = json.dumps(result, indent=4)
+	with open(result_path, "w") as result_file:
+		result_file.write(json_result)
 
 	print("Saved all plots to {}".format(output_folder))
 
