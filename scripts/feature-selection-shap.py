@@ -20,6 +20,16 @@ def prepare_data(data_folder, fast_mode, random_mode, config):
 	test = { "x": x_test, "y": y_test }
 	return (train, test, na_value)
 
+def get_mean(values):
+	mean = []
+	for index in range(values.shape[1]):
+		column = values[:,index]
+		sum = 0
+		for item in column:
+			sum = sum + abs(item)
+		mean.append(sum / values.shape[0])
+	return mean
+
 def select_feature(data_folder, output_folder, config, fast_mode,
 	random_mode):
 	print("Preparing data...")
@@ -61,10 +71,11 @@ def select_feature(data_folder, output_folder, config, fast_mode,
 	with open(params_path, "w") as params_file:
 		params_file.write(json_config)
 
-	values = np.absolute(shap_values.values).mean(axis=0)
+	values = get_mean(shap_values.values)
+	indices = sorted(range(len(values)), key=lambda k: values[k])
 	result = { 
-		"values": values.tolist(),
-		"sorted_indices": np.argsort(values).tolist()
+		"values": values,
+		"sorted_indices": indices
 	}
 	result_path = os.path.join(output_folder, "result.json")
 	json_result = json.dumps(result, indent=4)
