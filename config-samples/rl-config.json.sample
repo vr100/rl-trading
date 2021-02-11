@@ -4,5 +4,6 @@
 	"weight_col": "weight",
 	"response_col": "resp",
 	"episode_col": "date",
-	"total_actions": 2
+	"total_actions": 2,
+	"model": "A2C"
 }

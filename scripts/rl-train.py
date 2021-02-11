@@ -11,6 +11,13 @@ def prefill_config(data, config):
 	print(f"Filled Config: {config}")
 	return config
 
+def save_config(output_path, config):
+	new_config = config.copy()
+	new_config.pop("total_days")
+	json_config = json.dumps(new_config, indent=4)
+	with open(output_path, "w") as config_file:
+		config_file.write(json_config)
+
 def prepare_data(data_folder, fast_mode, random_mode, config):
 	(train, test, na_value) = dataset.read_data(data_folder,
 		fast_mode=fast_mode, na_value=config["na_value"],
@@ -27,15 +34,18 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	(model, env) = a2c.get_model(train, config)
 	model = a2c.train(model, env, len(train))
 	print("Saving model...")
-	output_path = os.path.join(output_folder, "a2c.zip")
+	model_name = config["model"]
+	output_path = os.path.join(output_folder, f"{model_name}.zip")
 	a2c.save(model, output_path)
 	print(f"Model saved to {output_path}")
 	print("Loading model...")
-	model = a2c.load(output_path)
+	model = a2c.load(output_path, config)
 	print("Evaluating the model...")
 	test = test.sort_values(by=[config["episode_col"]])
 	config = prefill_config(test, config)
 	a2c.evaluate(model, test, config)
+	output_path = os.path.join(output_path, "config.json")
+	save_config(output_path, config)
 	print("Done...")
 
 def parse_args():
