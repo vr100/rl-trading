@@ -2,11 +2,13 @@ import os, argparse, json
 from utils import a2c, dataset
 
 def prefill_config(data, config):
-	feature_cols = [col for col in data if col.startswith(
-		config["feature_prefix"])]
-	config["feature_cols"] = feature_cols
+	if "feature_cols" not in config:
+		feature_cols = [col for col in data if col.startswith(
+			config["feature_prefix"])]
+		config["feature_cols"] = feature_cols
 	episode = config["episode_col"]
 	config["total_days"] = len(data[episode].unique())
+	print(f"Filled Config: {config}")
 	return config
 
 def prepare_data(data_folder, fast_mode, random_mode, config):
@@ -48,6 +50,9 @@ def parse_args():
 		"--config_path", type=str, help="specifies the json config path",
 		required=True)
 	parser.add_argument(
+		"--features_path", type=str, help="specifies the boruta algo feature selection results json file path",
+		default=None)
+	parser.add_argument(
 		"--fast_mode", default=False,
 		type=lambda s: s.lower() in ['true', 'yes', '1'],
 		help="specifies whether only a sample subset should be run")
@@ -66,6 +71,16 @@ def main():
 	fast_mode = args["fast_mode"]
 	with open(config_path, "r") as json_file:
 		config = json.load(json_file)
+	print(f"Config: {config}")
+
+	if args["features_path"] is not None:
+		features_path = os.path.abspath(args["features_path"])
+		with open(features_path, "r") as json_file:
+			features = json.load(json_file)
+		selected_features = features["selected_feature_indices"]
+		print(f"Selected features: {selected_features}")
+		prefix = config["feature_prefix"]
+		config["feature_cols"] = [ f"{prefix}{i}" for i in selected_features]
 	train_rl(data_path, output_path, config, fast_mode,
 		random_mode)
 
