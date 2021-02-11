@@ -24,6 +24,8 @@ def evaluate(model, test, config, print_step=100):
 			print(f"Weight: {weight}, response: {response}, " +
 				f"Action: {action}, Stats: {stats}, Reward: {reward}")
 			env.render()
+	print("Final result: ")
+	env.render()
 
 def save(model, output_path):
 	model.save(output_path)
