@@ -32,7 +32,7 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	config = prefill_config(train, config)
 	print("Training the model...")
 	(model, env) = rl.get_model(train, config)
-	model = rl.train(model, env, len(train))
+	model = rl.train(model, env, config["repeat_train"] * len(train))
 	print("Saving model...")
 	model_name = config["model"]
 	output_path = os.path.join(output_folder, f"{model_name}.zip")
