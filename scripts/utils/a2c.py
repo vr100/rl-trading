@@ -17,8 +17,11 @@ def evaluate(model, test, config, print_step=1000):
 	env = CustomStockEnv(test, config)
 	obs = env.reset()
 	datalen = len(test)
+	no_action = 0
 	for i in range(datalen):
 		action, stats = model.predict(obs)
+		if action == 0:
+			no_action += 1
 		obs, reward, done, info = env.step(action)
 		if i % print_step == 0:
 			weight = test.iloc[i][config["weight_col"]]
@@ -28,6 +31,7 @@ def evaluate(model, test, config, print_step=1000):
 			env.render()
 	print("Test result: ")
 	env.render()
+	print(f"No action taken for data point: {no_action} / {datalen}")
 
 def save(model, output_path):
 	model.save(output_path)
