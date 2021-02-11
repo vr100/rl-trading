@@ -2,7 +2,7 @@ import gym
 from stable_baselines3 import A2C, PPO, DDPG
 from env.customstockenv import CustomStockEnv
 
-SUPPORTED_MODELS = ["A2C", "PPO", "DDPG"]
+SUPPORTED_MODELS = ["A2C", "PPO", "DQN"]
 
 def get_class(model_name):
 	check_supported(model_name)
