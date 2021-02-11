@@ -44,7 +44,7 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	test = test.sort_values(by=[config["episode_col"]])
 	config = prefill_config(test, config)
 	rl.evaluate(model, test, config)
-	output_path = os.path.join(output_path, "config.json")
+	output_path = os.path.join(output_folder, "config.json")
 	save_config(output_path, config)
 	print("Done...")
 

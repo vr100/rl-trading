@@ -4,6 +4,12 @@ from env.customstockenv import CustomStockEnv
 
 SUPPORTED_MODELS = ["A2C", "PPO", "DDPG"]
 
+def get_class(model_name):
+	check_supported(model_name)
+	module = __import__("stable_baselines3")
+	clz = getattr(module, model_name)
+	return clz
+
 def check_supported(model_name):
 	if model_name not in SUPPORTED_MODELS:
 		print(f"Unknown model {model_name}, supported models: {SUPPORTED_MODELS}")
@@ -11,10 +17,9 @@ def check_supported(model_name):
 
 def get_model(data, config):
 	env = CustomStockEnv(data, config)
-	class_name = config["model"]
-	check_supported(class_name)
-	constructor_fn = getattr(locals().get(class_name), "__init__")
-	model = constructor_fn("MlpPolicy", env, verbose=1)
+	clz = get_class(config["model"])
+	constructor_fn = getattr(clz, "__init__")
+	model = clz(policy="MlpPolicy", env=env, verbose=1)
 	return (model, env)
 
 def train(model, env, timesteps):
@@ -47,9 +52,8 @@ def save(model, output_path):
 	model.save(output_path)
 
 def load(model_path, config, env=None, data=None):
-	class_name = config["model"]
-	check_supported(class_name)
-	load_fn = getattr(locals().get(class_name), "load")
+	clz = get_class(config["model"])
+	load_fn = getattr(clz, "load")
 	if env:
 		return load_fn(model_path, env)
 	if data is not None:
