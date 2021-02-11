@@ -1,0 +1,8 @@
+{
+	"na_value": "zero",
+	"feature_prefix": "feature_",
+	"weight_col": "weight",
+	"response_col": "resp",
+	"episode_col": "date",
+	"total_actions": 2
+}
