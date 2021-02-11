@@ -9,9 +9,11 @@ def get_model(data, config):
 
 def train(model, env, timesteps):
 	model = model.learn(total_timesteps=timesteps)
+	print("Training result: ")
+	env.render()
 	return model
 
-def evaluate(model, test, config, print_step=100):
+def evaluate(model, test, config, print_step=1000):
 	env = CustomStockEnv(test, config)
 	obs = env.reset()
 	datalen = len(test)
@@ -24,7 +26,7 @@ def evaluate(model, test, config, print_step=100):
 			print(f"Weight: {weight}, response: {response}, " +
 				f"Action: {action}, Stats: {stats}, Reward: {reward}")
 			env.render()
-	print("Final result: ")
+	print("Test result: ")
 	env.render()
 
 def save(model, output_path):
