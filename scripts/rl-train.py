@@ -31,7 +31,7 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	print("Saving model...")
 	output_path = os.path.join(output_folder, "a2c.zip")
 	a2c.save(model, output_path)
-	print("Done...")
+	print(f"Model saved to {output_path}")
 
 def parse_args():
 	parser = argparse.ArgumentParser()

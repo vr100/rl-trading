@@ -42,6 +42,14 @@ class CustomStockEnv(gym.Env):
 			self.data.iloc[self.current_step + 1][self.episode]
 		return done
 
+	def compute_u(self, p_sum, p_2_sum):
+		if p_sum != 0:
+			t = (p_sum / math.sqrt(p_2_sum)) * math.sqrt(250 / self.day_count)
+		else:
+			t = 0
+		u = min(max(t, 0), 6) * p_sum
+		return u
+
 	def _do_nothing(self):
 		return 0
 
@@ -51,11 +59,7 @@ class CustomStockEnv(gym.Env):
 		p = self.p_old + return_value
 		p_sum = self.pp_sum + p
 		p_2_sum = self.pp_2_sum + pow(p, 2)
-		if p_sum != 0:
-			t = (p_sum / math.sqrt(p_2_sum)) * math.sqrt(250 / self.day_count)
-		else:
-			t = 0
-		u = min(max(t, 0), 6) * p_sum
+		u = self.compute_u(p_sum, p_2_sum)
 		reward = u - self.u_old
 		done = self.is_done()
 		self.p_old = p
@@ -89,8 +93,10 @@ class CustomStockEnv(gym.Env):
 		return self._next_observation()
 
 	def render(self, mode="human", close=False):
+		u = self.compute_u(self.pp_sum, self.pp_2_sum)
 		print(f"pp_sum: {self.pp_sum}, " +
 			f"pp_2_sum: {self.pp_2_sum}, " +
 			f"p_old: {self.p_old}, " +
 			f"u_old: {self.u_old}, " +
+			f"computed_u: {u}, " +
 			f"current_step: {self.current_step}")
