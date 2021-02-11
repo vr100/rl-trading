@@ -32,7 +32,10 @@ def evaluate(model, test, config, print_step=1000):
 def save(model, output_path):
 	model.save(output_path)
 
-def load(model_path, data, config):
-	env = CustomStockEnv(data, config)
-	model = A2C.load(model_path, env)
-	return model
+def load(model_path, env=None, data=None, config=None):
+	if env:
+		return A2C.load(model_path, env)
+	if data is not None and config is not None:
+		env = CustomStockEnv(data, config)
+		return A2C.load(model_path, env)
+	return A2C.load(model_path, env=None)

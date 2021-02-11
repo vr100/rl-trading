@@ -42,13 +42,18 @@ class CustomStockEnv(gym.Env):
 			self.data.iloc[self.current_step + 1][self.episode]
 		return done
 
-	def compute_u(self, p_sum, p_2_sum):
+	def compute_u(self, p):
+		p_sum = self.pp_sum + p
+		p_2_sum = self.pp_2_sum + pow(p, 2)
 		if p_sum != 0:
 			t = (p_sum / math.sqrt(p_2_sum)) * math.sqrt(250 / self.day_count)
 		else:
 			t = 0
 		u = min(max(t, 0), 6) * p_sum
-		return u
+		reward_u = u
+		if t < 0:
+			reward_u = - abs(t * p_sum)
+		return u, reward_u
 
 	def _do_nothing(self):
 		return 0
@@ -57,13 +62,11 @@ class CustomStockEnv(gym.Env):
 		current_data = self.data.iloc[self.current_step]
 		return_value = current_data[self.weight] * current_data[self.response]
 		p = self.p_old + return_value
-		p_sum = self.pp_sum + p
-		p_2_sum = self.pp_2_sum + pow(p, 2)
-		u = self.compute_u(p_sum, p_2_sum)
-		reward = u - self.u_old
+		_, reward_u = self.compute_u(p)
+		reward = reward_u - self.u_old
 		done = self.is_done()
 		self.p_old = p
-		self.u_old = u
+		self.u_old = reward_u
 		return reward
 
 	def _take_action(self, action):
@@ -93,7 +96,7 @@ class CustomStockEnv(gym.Env):
 		return self._next_observation()
 
 	def render(self, mode="human", close=False):
-		u = self.compute_u(self.pp_sum, self.pp_2_sum)
+		u,_ = self.compute_u(self.p_old)
 		print(f"pp_sum: {self.pp_sum}, " +
 			f"pp_2_sum: {self.pp_2_sum}, " +
 			f"p_old: {self.p_old}, " +
