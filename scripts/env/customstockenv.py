@@ -16,10 +16,9 @@ class CustomStockEnv(gym.Env):
 		# computed reward states: pp_sum, pp_2_sum, p_old, u_old
 		# given reward states: weight
 		reward_state = 4 + 1
-		state_len = len(self.features) + reward_state
 		self.action_space = spaces.Discrete(config["total_actions"])
 		self.observation_space = spaces.Box(low=-np.inf,
-			high=np.inf, shape=(state_len, 1), dtype=np.float32)
+			high=np.inf, shape=(reward_state, 1), dtype=np.float32)
 		self.pp_sum = 0
 		self.pp_2_sum = 0
 		self.p_old = 0
@@ -27,8 +26,7 @@ class CustomStockEnv(gym.Env):
 		self.current_step = 0
 
 	def _next_observation(self):
-		state_columns = self.features.copy()
-		state_columns.append(self.weight)
+		state_columns = [self.weight]
 		state = self.data.iloc[self.current_step][state_columns].to_numpy()
 		state = np.append(state, [self.pp_sum, self.pp_2_sum,
 			self.p_old, self.u_old])
