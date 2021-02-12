@@ -28,7 +28,7 @@ def train(model, env, timesteps):
 	env.render()
 	return model
 
-def evaluate(model, test, config, print_step=1000):
+def evaluate(model, test, config):
 	env = CustomStockEnv(test, config)
 	obs = env.reset()
 	datalen = len(test)
@@ -38,7 +38,7 @@ def evaluate(model, test, config, print_step=1000):
 		if action == 0:
 			no_action += 1
 		obs, reward, done, info = env.step(action)
-		if i % print_step == 0:
+		if i % config["print_step"] == 0:
 			weight = test.iloc[i][config["weight_col"]]
 			response = test.iloc[i][config["response_col"]]
 			print(f"Weight: {weight}, response: {response}, " +
