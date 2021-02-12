@@ -34,7 +34,7 @@ def evaluate(model, test, config, print_step=1000):
 	datalen = len(test)
 	no_action = 0
 	for i in range(datalen):
-		action, stats = model.predict(obs)
+		action, stats = model.predict(obs, deterministic=True)
 		if action == 0:
 			no_action += 1
 		obs, reward, done, info = env.step(action)
