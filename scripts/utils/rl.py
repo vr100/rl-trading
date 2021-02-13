@@ -1,8 +1,60 @@
 import gym
-from stable_baselines3 import A2C, PPO, DDPG
+from stable_baselines3 import A2C, PPO, DDPG, SAC
+from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from env.customstockenv import CustomStockEnv
+import numpy as np
 
-SUPPORTED_MODELS = ["A2C", "PPO", "DQN"]
+DEFAULT_VALUES = {
+	"ent_coef": 0.005,
+	"sigma": 0.5
+}
+
+def get_value(config, name):
+	if name not in config:
+		return DEFAULT_VALUES[name]
+	return config[name]
+
+def get_a2c_model(env, config):
+	return A2C("MlpPolicy", env, verbose=1)
+
+def get_ppo_model(env, config):
+	ent_coef = get_value(config, "ent_coef")
+	return PPO("MlpPolicy", env, ent_coef=ent_coef, verbose=1)
+
+def get_ddpg_model(env, config):
+	sigma = get_value(config, "sigma")
+	action_count = config["total_actions"]
+	action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(action_count),
+		sigma=float(sigma) * np.ones(action_count))
+	return DDPG("MlpPolicy", env, action_noise=action_noise,
+		verbose=1)
+
+def get_sac_model(env, config):
+	ent_coef = get_value(config, "ent_coef")
+	sigma = get_value(config, "sigma")
+	action_count = config["total_actions"]
+	action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(action_count),
+		sigma=float(sigma) * np.ones(action_count))
+	return SAC("MlpPolicy", env, ent_coef=ent_coef,
+		action_noise=action_noise, verbose=1)
+
+MODEL_FN = {
+	"A2C": get_a2c_model,
+	"PPO": get_ppo_model,
+	"DDPG": get_ddpg_model,
+	"SAC": get_sac_model
+}
+
+def get_model_fn(model_name):
+	if model_name not in MODEL_FN:
+		print(f"Unknown model {model_name}, supported models: {SUPPORTED_MODELS}")
+		exit()
+	return MODEL_FN[model_name]
+
+def check_supported(model_name):
+	if model_name not in MODEL_FN:
+		print(f"Unknown model {model_name}, supported models: {SUPPORTED_MODELS}")
+		exit()
 
 def get_class(model_name):
 	check_supported(model_name)
@@ -10,16 +62,10 @@ def get_class(model_name):
 	clz = getattr(module, model_name)
 	return clz
 
-def check_supported(model_name):
-	if model_name not in SUPPORTED_MODELS:
-		print(f"Unknown model {model_name}, supported models: {SUPPORTED_MODELS}")
-		exit()
-
 def get_model(data, config):
 	env = CustomStockEnv(data, config)
-	clz = get_class(config["model"])
-	constructor_fn = getattr(clz, "__init__")
-	model = clz(policy="MlpPolicy", env=env, verbose=1)
+	model_fn = get_model_fn(config["model"])
+	model = model_fn(env, config)
 	return (model, env)
 
 def train(model, env, timesteps):
@@ -34,10 +80,11 @@ def evaluate(model, test, config):
 	datalen = len(test)
 	no_action = 0
 	for i in range(datalen):
-		action, stats = model.predict(obs, deterministic=True)
+		action_prob, stats = model.predict(obs)
+		action = np.argmax(action_prob)
 		if action == 0:
 			no_action += 1
-		obs, reward, done, info = env.step(action)
+		obs, reward, done, info = env.step(action_prob)
 		if i % config["print_step"] == 0:
 			weight = test.iloc[i][config["weight_col"]]
 			response = test.iloc[i][config["response_col"]]
@@ -47,6 +94,8 @@ def evaluate(model, test, config):
 	print("Test result: ")
 	env.render()
 	print(f"No action taken for data point: {no_action} / {datalen}")
+	computed_u, _ = env.compute_u()
+	return (no_action, computed_u)
 
 def save(model, output_path):
 	model.save(output_path)

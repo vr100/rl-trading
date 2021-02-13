@@ -43,9 +43,15 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	print("Evaluating the model...")
 	test = test.sort_values(by=[config["episode_col"]])
 	config = prefill_config(test, config)
-	rl.evaluate(model, test, config)
+	(action_0_count, u) = rl.evaluate(model, test, config)
 	output_path = os.path.join(output_folder, "config.json")
 	save_config(output_path, config)
+	result = { "action_0": action_0_count, "datalen": len(test),
+		"u": u}
+	output_path = os.path.join(output_folder, "result.json")
+	json_result = json.dumps(result, indent=4)
+	with open(output_path, "w") as result_file:
+		result_file.write(json_result)
 	print("Done...")
 
 def parse_args():

@@ -16,9 +16,12 @@ class CustomStockEnv(gym.Env):
 		# computed reward states: pp_sum, pp_2_sum, p_old, u_old
 		# given reward states: weight
 		reward_state = 4 + 1
-		self.action_space = spaces.Discrete(config["total_actions"])
+		action_count = config["total_actions"]
+		self.action_space = spaces.Box(low = 0, high = 1,
+			shape = (action_count,))
 		self.observation_space = spaces.Box(low=-np.inf,
 			high=np.inf, shape=(reward_state, 1), dtype=np.float32)
+		self.obs_dim = (reward_state, 1)
 		self.pp_sum = 0
 		self.pp_2_sum = 0
 		self.p_old = 0
@@ -40,7 +43,9 @@ class CustomStockEnv(gym.Env):
 			self.data.iloc[self.current_step + 1][self.episode]
 		return done
 
-	def compute_u(self, p):
+	def compute_u(self, p=None):
+		if p is None:
+			p = self.p_old
 		p_sum = self.pp_sum + p
 		p_2_sum = self.pp_2_sum + pow(p, 2)
 		if p_sum != 0:
@@ -48,9 +53,7 @@ class CustomStockEnv(gym.Env):
 		else:
 			t = 0
 		u = min(max(t, 0), 6) * p_sum
-		reward_u = u
-		if t < 0:
-			reward_u = - abs(t * p_sum)
+		reward_u = min(abs(t), 6) * p_sum
 		return u, reward_u
 
 	def _do_nothing(self):
@@ -67,7 +70,8 @@ class CustomStockEnv(gym.Env):
 		self.u_old = reward_u
 		return reward
 
-	def _take_action(self, action):
+	def _take_action(self, action_prob):
+		action = np.argmax(action_prob)
 		if action == 0:
 			return self._do_nothing()
 		elif action == 1:
@@ -94,7 +98,7 @@ class CustomStockEnv(gym.Env):
 		return self._next_observation()
 
 	def render(self, mode="human", close=False):
-		u,_ = self.compute_u(self.p_old)
+		u,_ = self.compute_u()
 		print(f"pp_sum: {self.pp_sum}, " +
 			f"pp_2_sum: {self.pp_2_sum}, " +
 			f"p_old: {self.p_old}, " +
