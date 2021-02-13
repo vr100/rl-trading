@@ -1,7 +1,8 @@
 import gym
 from stable_baselines3 import A2C, PPO, DDPG, SAC
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
-from env.customstockenv import CustomStockEnv
+from env.customstockenvdefault import CustomStockEnvDefault
+from env.customstockenvpred import CustomStockEnvPred
 import numpy as np
 
 DEFAULT_VALUES = {
@@ -63,7 +64,7 @@ def get_class(model_name):
 	return clz
 
 def get_model(data, config):
-	env = CustomStockEnv(data, config)
+	env = CustomStockEnvDefault(data, config)
 	model_fn = get_model_fn(config["model"])
 	model = model_fn(env, config)
 	return (model, env)
@@ -74,8 +75,12 @@ def train(model, env, timesteps):
 	env.render()
 	return model
 
-def evaluate(model, test, config):
-	env = CustomStockEnv(test, config)
+def evaluate(model, test, config, predict=False):
+	if predict and "model_path" in config:
+		print("Using prediction for evaluation...")
+		env = CustomStockEnvPred(test, config)
+	else:
+		env = CustomStockEnvDefault(test, config)
 	obs = env.reset()
 	datalen = len(test)
 	no_action = 0
@@ -106,6 +111,6 @@ def load(model_path, config, env=None, data=None):
 	if env:
 		return load_fn(model_path, env)
 	if data is not None:
-		env = CustomStockEnv(data, config)
+		env = CustomStockEnvDefault(data, config)
 		return load_fn(model_path, env)
 	return load_fn(model_path, env=None)

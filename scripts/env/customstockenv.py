@@ -1,6 +1,7 @@
 import gym, math
 from gym import spaces
 import numpy as np
+from abc import abstractmethod
 
 class CustomStockEnv(gym.Env):
 	metadata = { "render.modes": ["human"] }
@@ -21,7 +22,6 @@ class CustomStockEnv(gym.Env):
 			shape = (action_count,))
 		self.observation_space = spaces.Box(low=-np.inf,
 			high=np.inf, shape=(reward_state, 1), dtype=np.float32)
-		self.obs_dim = (reward_state, 1)
 		self.pp_sum = 0
 		self.pp_2_sum = 0
 		self.p_old = 0
@@ -59,9 +59,19 @@ class CustomStockEnv(gym.Env):
 	def _do_nothing(self):
 		return 0
 
+	@abstractmethod
+	def _predict_response(self, data):
+		pass
+
+	def _get_response(self, data):
+		if self.prediction:
+			return self._predict_response(data)
+		return data[self.response]
+
 	def _perform_action(self):
 		current_data = self.data.iloc[self.current_step]
-		return_value = current_data[self.weight] * current_data[self.response]
+		current_response = self._get_response(current_data)
+		return_value = current_data[self.weight] * current_response
 		p = self.p_old + return_value
 		_, reward_u = self.compute_u(p)
 		reward = reward_u - self.u_old

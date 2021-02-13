@@ -7,5 +7,8 @@
 	"total_actions": 2,
 	"model": "A2C",
 	"repeat_train": 2,
-	"print_step": 10000
+	"print_step": 10000,
+	"model_path": "/workspace/model.joblib",
+	"x_scaler_path": "/workspace/x-scaler.joblib",
+	"y_scaler_path": "/workspace/y-scaler.joblib"
 }

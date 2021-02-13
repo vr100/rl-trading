@@ -46,3 +46,9 @@ def evaluate(model, x, y, metrics):
 	metrics_info = metrics_util.compute_metrics(y, y_pred, metrics,
 		multioutput="raw_values")
 	return (y_pred, metrics_info)
+
+def infer(model, x, output_size=1):
+	if isinstance(model, mlp.MLP):
+		return mlp.infer(model, x, output_size)
+	y_pred = model.predict(x)
+	return y_pred

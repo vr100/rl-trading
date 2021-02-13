@@ -44,10 +44,15 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	test = test.sort_values(by=[config["episode_col"]])
 	config = prefill_config(test, config)
 	(action_0_count, u) = rl.evaluate(model, test, config)
+	print("Evaluating the model with prediction ...")
+	(pred_action_0_count, pred_u) = rl.evaluate(model, test, config,
+		predict=True)
 	output_path = os.path.join(output_folder, "config.json")
 	save_config(output_path, config)
-	result = { "action_0": action_0_count, "datalen": len(test),
-		"u": u}
+	eval_result = { "action_0": action_0_count, "u": u}
+	pred_result = { "action_0": pred_action_0_count, "u": pred_u}
+	result = { "datalen": len(test), "eval": eval_result,
+		"pred": pred_result }
 	output_path = os.path.join(output_folder, "result.json")
 	json_result = json.dumps(result, indent=4)
 	with open(output_path, "w") as result_file:
@@ -97,6 +102,7 @@ def main():
 		print(f"Selected features: {selected_features}")
 		prefix = config["feature_prefix"]
 		config["feature_cols"] = [ f"{prefix}{i}" for i in selected_features]
+
 	train_rl(data_path, output_path, config, fast_mode,
 		random_mode)
 

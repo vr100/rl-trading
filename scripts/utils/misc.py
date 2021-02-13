@@ -15,6 +15,8 @@ def add_gaussian_noise(data, mean=0, std=1):
 	return add_gaussian_noise_for_tensor(data, mean, std)
 
 def get_torch_representation(data, device):
+	if isinstance(data, torch.Tensor):
+		return data.to(device).float()
 	if isinstance(data, np.ndarray):
 		numpy_data = data
 	else:

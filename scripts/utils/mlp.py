@@ -90,20 +90,21 @@ def train(model, x, y, epochs=20, lr=LEARNING_RATE,
 	return model
 
 def evaluate(model, x, y, metrics, batch_size=BATCH_SIZE):
-	pred = infer(model, x, y, batch_size)
-	metrics_info = metrics_util.compute_metrics(y, pred, metrics,
-		multioutput="raw_values")
-	return (pred, metrics_info)
-
-def infer(model, x, y, batch_size=BATCH_SIZE):
-	model.eval()
 	x = helper.get_torch_representation(x, DEVICE)
 	y = helper.get_torch_representation(y, DEVICE)
 	if len(y.shape) == 1:
 		y = torch.reshape(y, shape=(y.shape[0], 1))
+	pred = infer(model, x, y.shape[1], batch_size)
+	metrics_info = metrics_util.compute_metrics(y, pred, metrics,
+		multioutput="raw_values")
+	return (pred, metrics_info)
+
+def infer(model, x, output_size, batch_size=BATCH_SIZE):
+	model.eval()
+	x = helper.get_torch_representation(x, DEVICE)
 	dataset = TensorDataset(x)
 	loader = DataLoader(dataset, batch_size=batch_size)
-	pred = np.empty(shape=(0, y.shape[1]))
+	pred = np.empty(shape=(0, output_size))
 	with torch.no_grad():
 		for data in loader:
 			output = model(data[0])
