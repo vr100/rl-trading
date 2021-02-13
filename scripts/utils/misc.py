@@ -1,12 +1,12 @@
 import numpy as np
 import torch
 
-def add_gaussian_noise_for_numpy(data, mean=0, std=1):
+def add_gaussian_noise_for_numpy(data, mean, std):
 	noise = std * np.random.randn(data.size) + mean
 	noise = np.reshape(noise, data.shape)
 	return data + noise
 
-def add_gaussian_noise_for_tensor(data, mean=0, std=1):
+def add_gaussian_noise_for_tensor(data, mean, std):
 	return data + torch.randn(data.size()) * std + mean
 
 def add_gaussian_noise(data, mean=0, std=1):

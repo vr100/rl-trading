@@ -8,18 +8,21 @@ import utils.metrics as metrics_util
 import utils.misc as helper
 
 BATCH_SIZE = 256
-LEARNING_RATE = 0.005
+LEARNING_RATE = 0.0001
 DEVICE = "cpu"
 
 class MLP(nn.Module):
 
 	def get_higher_power_of_2(self, value):
 		index = 0
-		value = value * 2
-		while value >= 2:
-			value = value / 2
+		temp = value * 2
+		while temp >= 2:
+			temp = temp / 2
 			index = index + 1
-		return int(math.pow(2, index))
+		higher_power = int(math.pow(2, index))
+		if (higher_power - value) < value / 2:
+			higher_power = higher_power * 2
+		return higher_power
 
 	def activation_layer(self):
 		return nn.LeakyReLU()
@@ -28,9 +31,8 @@ class MLP(nn.Module):
 		layers=1, dropout=0.5):
 		super(MLP, self).__init__()
 
-		nearest_2_power = self.get_higher_power_of_2(input_size)
-		layer_list = [ nn.Linear(input_size, nearest_2_power) ]
-		size = nearest_2_power
+		size = self.get_higher_power_of_2(input_size)
+		layer_list = [ nn.Linear(input_size, size) ]
 		for i in range(layers):
 			enc = nn.Linear(in_features=size, out_features=size)
 			layer_list.extend([self.activation_layer(),

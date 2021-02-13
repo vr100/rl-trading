@@ -24,9 +24,13 @@ def prepare_data(data_folder, model_path, config, fast_mode):
 	y_cols = get_cols_for_approach(config["approach"])
 	(train, test, na_value) = dataset.read_data(data_folder,
 		fast_mode, na_value=config["na_value"])
-	x_train = train.drop(X_SKIP_COLS, axis=1)
+	if "selected_features" in config:
+		x_train = train[config["selected_features"]]
+		x_test = test[config["selected_features"]]
+	else:
+		x_train = train.drop(X_SKIP_COLS, axis=1)
+		x_test = test.drop(X_SKIP_COLS, axis=1)
 	y_train = train[y_cols]
-	x_test = test.drop(X_SKIP_COLS, axis=1)
 	y_test = test[y_cols]
 	out_train = train[Y_OUTPUT_COLS]
 	out_test = test[Y_OUTPUT_COLS]
@@ -115,6 +119,9 @@ def parse_args():
 		"--config_path", type=str, help="specifies the json config path",
 		required=True)
 	parser.add_argument(
+		"--features_path", type=str, help="specifies the boruta algo feature selection results json file path",
+		default=None)
+	parser.add_argument(
 		"--autoencoder_path", type=str, help="specifies the autoencoder model path",
 		required=False, default=None)
 	parser.add_argument(
@@ -134,6 +141,15 @@ def main():
 	fast_mode = args["fast_mode"]
 	with open(config_path, "r") as json_file:
 		config = json.load(json_file)
+	if args["features_path"] is not None:
+		features_path = os.path.abspath(args["features_path"])
+		with open(features_path, "r") as json_file:
+			features = json.load(json_file)
+		selected_features = features["selected_feature_indices"]
+		print(f"Selected features: {selected_features}")
+		prefix = config["feature_prefix"]
+		config["selected_features"] = [ f"{prefix}{i}" \
+			for i in selected_features]
 	train_evaluate(data_path, output_path, autoencoder_path,
 		config, fast_mode)
 
