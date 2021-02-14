@@ -33,8 +33,9 @@ def get_model(reg_type, x_size, y_size, job_count):
 def train(model, x, y):
 	if isinstance(model, mlp.MLP):
 		return mlp.train(model, x, y)
-	x = x.to_numpy()
-	y = y.to_numpy()
+	if not isinstance(x, np.ndarray):
+		x = x.to_numpy()
+		y = y.to_numpy()
 	x = helper.add_gaussian_noise(x)
 	model.fit(x, y)
 	return model
