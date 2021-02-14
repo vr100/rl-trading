@@ -103,7 +103,7 @@ def evaluate(model, test, config, predict=False,
 			env.render()
 	print("Test result: ")
 	env.render()
-	actions = np.argmax(action_probs, axis=0)
+	actions = np.argmax(action_probs, axis=1)
 	no_action = len(list(filter(lambda x: x == 0, actions)))
 	print(f"No action taken for data point: {no_action} / {datalen}")
 	computed_u, _ = env.compute_u()

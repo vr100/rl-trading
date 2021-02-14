@@ -1,5 +1,6 @@
 import os, argparse, json
 from utils import rl, dataset
+import numpy as np
 
 def prefill_config(data, config):
 	if "feature_cols" not in config:
@@ -25,7 +26,7 @@ def prepare_data(data_folder, fast_mode, random_mode, config):
 	return (train, test, na_value)
 
 def get_result(action_probs, u):
-	actions = np.argmax(action_probs, axis=0)
+	actions = np.argmax(action_probs, axis=1)
 	action_0 = len(list(filter(lambda x: x == 0, actions)))
 	action_1 = len(list(filter(lambda x: x == 1, actions)))
 	return {"action_0": action_0, "action_1": action_1, "u": u}
@@ -62,7 +63,7 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	pred_result = get_result(pred_action_probs, pred_u)
 	next_eval_result = get_result(next_action_probs, next_u)
 	result = { "datalen": len(test), "eval": eval_result,
-		"pred": pred_result, "next_eval": next_eval_result }
+		"pred": pred_result, "eval_with_pred": next_eval_result }
 	output_path = os.path.join(output_folder, "result.json")
 	json_result = json.dumps(result, indent=4)
 	with open(output_path, "w") as result_file:
