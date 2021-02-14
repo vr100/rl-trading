@@ -4,5 +4,6 @@
 	"autoencoder_output_features": 64,
 	"na_value": "zero",
 	"job_count": 1,
-	"feature_prefix": "feature_"
+	"feature_prefix": "feature_",
+	"batch_size": 256
 }

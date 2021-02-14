@@ -76,12 +76,12 @@ def train_evaluate(data_folder, output_folder, autoencoder_path,
 	x_size = train["x"].shape[1] if autoencoder_path is None else \
 		config["autoencoder_output_features"]
 	model = regression.get_model(config["regression_algo"],
-		x_size, y_size, config["job_count"])
+		x_size, y_size, config)
 	print("Training...")
-	model = regression.train(model, train["x"], train["y"])
+	model = regression.train(model, train["x"], train["y"], config)
 	print("Evaluating...")
 	(y_pred, metrics) = regression.evaluate(model, test["x"],
-		test["y"], METRICS_INFO)
+		test["y"], METRICS_INFO, config)
 	print("Postprocessing data...")
 	y_output = postprocess_data(test["out"], y_pred, config)
 

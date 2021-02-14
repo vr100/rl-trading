@@ -15,6 +15,7 @@ class CustomStockEnvPred(CustomStockEnv):
 		self.y_scaler = None
 		if "y_scaler_path" in config:
 			self.y_scaler = joblib.load(config["y_scaler_path"])
+		self.config = config
 
 	def _predict_response(self, data_row):
 		data_row = data_row[self.features]
@@ -22,7 +23,7 @@ class CustomStockEnvPred(CustomStockEnv):
 		data = data.append(data_row, ignore_index=True)
 		if self.x_scaler is not None:
 			data, _ = scaler.scale_data(data, self.x_scaler)
-		pred = regression.infer(self.model, data)
+		pred = regression.infer(self.model, data, self.config)
 		if self.y_scaler is not None:
 			pred, _ = scaler.scale_data(pred, self.y_scaler)
 		return pred[0][0]

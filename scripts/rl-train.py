@@ -24,6 +24,12 @@ def prepare_data(data_folder, fast_mode, random_mode, config):
 		random_mode=random_mode)
 	return (train, test, na_value)
 
+def get_result(action_probs, u):
+	actions = np.argmax(action_probs, axis=0)
+	action_0 = len(list(filter(lambda x: x == 0, actions)))
+	action_1 = len(list(filter(lambda x: x == 1, actions)))
+	return {"action_0": action_0, "action_1": action_1, "u": u}
+
 def train_rl(data_folder, output_folder, config, fast_mode,
 	random_mode):
 	print("Preparing data...")
@@ -43,16 +49,20 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	print("Evaluating the model...")
 	test = test.sort_values(by=[config["episode_col"]])
 	config = prefill_config(test, config)
-	(action_0_count, u) = rl.evaluate(model, test, config)
+	(action_probs, u) = rl.evaluate(model, test, config)
 	print("Evaluating the model with prediction ...")
-	(pred_action_0_count, pred_u) = rl.evaluate(model, test, config,
+	(pred_action_probs, pred_u) = rl.evaluate(model, test, config,
 		predict=True)
+	print("Evaluation with predict actions ...")
+	(next_action_probs, next_u) = rl.evaluate(model, test, config,
+		given_actions=pred_action_probs)
 	output_path = os.path.join(output_folder, "config.json")
 	save_config(output_path, config)
-	eval_result = { "action_0": action_0_count, "u": u}
-	pred_result = { "action_0": pred_action_0_count, "u": pred_u}
+	eval_result = get_result(action_probs, u)
+	pred_result = get_result(pred_action_probs, pred_u)
+	next_eval_result = get_result(next_action_probs, next_u)
 	result = { "datalen": len(test), "eval": eval_result,
-		"pred": pred_result }
+		"pred": pred_result, "next_eval": next_eval_result }
 	output_path = os.path.join(output_folder, "result.json")
 	json_result = json.dumps(result, indent=4)
 	with open(output_path, "w") as result_file:

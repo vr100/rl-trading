@@ -7,8 +7,6 @@ from torch.utils.data import DataLoader, TensorDataset
 import utils.metrics as metrics_util
 import utils.misc as helper
 
-BATCH_SIZE = 256
-LEARNING_RATE = 0.0001
 DEVICE = "cpu"
 
 class MLP(nn.Module):
@@ -28,8 +26,10 @@ class MLP(nn.Module):
 		return nn.LeakyReLU()
 
 	def __init__(self, input_size, expected_size,
-		layers=1, dropout=0.5):
+		config):
 		super(MLP, self).__init__()
+		layers = config["layers"]
+		dropout = config["dropout"]
 
 		size = self.get_higher_power_of_2(input_size)
 		layer_list = [ nn.Linear(input_size, size) ]
@@ -59,8 +59,11 @@ class MLP(nn.Module):
 def get_model(input_size, expected_size):
 	return MLP(input_size, expected_size)
 
-def train(model, x, y, epochs=20, lr=LEARNING_RATE,
-	batch_size=BATCH_SIZE):
+def train(model, x, y, config):
+	lr = config["lr"]
+	epochs = config["epochs"]
+	batch_size = config["batch_size"]
+	weight_decay = config["weight_decay"]
 	x = helper.get_torch_representation(x,DEVICE)
 	y = helper.get_torch_representation(y, DEVICE)
 	if len(y.shape) == 1:
@@ -70,7 +73,7 @@ def train(model, x, y, epochs=20, lr=LEARNING_RATE,
 	loader = DataLoader(dataset, batch_size=batch_size)
 	loss_fn = nn.MSELoss()
 	optimizer = optim.Adam(model.parameters(), lr=lr,
-		weight_decay=0.005)
+		weight_decay=weight_decay)
 	model.train()
 	for i in range(epochs):
 		running_loss = 0.0
@@ -89,7 +92,8 @@ def train(model, x, y, epochs=20, lr=LEARNING_RATE,
 	model.eval()
 	return model
 
-def evaluate(model, x, y, metrics, batch_size=BATCH_SIZE):
+def evaluate(model, x, y, metrics, config):
+	batch_size = config["batch_size"]
 	x = helper.get_torch_representation(x, DEVICE)
 	y = helper.get_torch_representation(y, DEVICE)
 	if len(y.shape) == 1:
@@ -99,7 +103,8 @@ def evaluate(model, x, y, metrics, batch_size=BATCH_SIZE):
 		multioutput="raw_values")
 	return (pred, metrics_info)
 
-def infer(model, x, output_size, batch_size=BATCH_SIZE):
+def infer(model, x, output_size, config):
+	batch_size = config["batch_size"]
 	model.eval()
 	x = helper.get_torch_representation(x, DEVICE)
 	dataset = TensorDataset(x)

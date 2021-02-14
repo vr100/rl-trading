@@ -8,7 +8,8 @@ import utils.mlp as mlp
 import utils.misc as helper
 import numpy as np
 
-def get_model(reg_type, x_size, y_size, job_count):
+def get_model(reg_type, x_size, y_size, config):
+
 	if reg_type == "linear":
 		return LinearRegression()
 	elif reg_type == "ridge":
@@ -22,17 +23,20 @@ def get_model(reg_type, x_size, y_size, job_count):
 	elif reg_type == "decisiontree":
 		return DecisionTreeRegressor()
 	elif reg_type == "randomforest":
+		job_count = config["job_count"]
+		max_depth = config["max_depth"]
+		random_state = config["random_state"]
 		return RandomForestRegressor(n_jobs=job_count,
-			max_depth=20, random_state=0)
+			max_depth=max_depth, random_state=random_state)
 	elif reg_type == "mlp":
-		return mlp.get_model(x_size, y_size)
+		return mlp.get_model(x_size, y_size, config)
 	else:
 		print("unknown regression model type {}".format(reg_type))
 		exit(-1)
 
-def train(model, x, y):
+def train(model, x, y, config):
 	if isinstance(model, mlp.MLP):
-		return mlp.train(model, x, y)
+		return mlp.train(model, x, y, config)
 	if not isinstance(x, np.ndarray):
 		x = x.to_numpy()
 		y = y.to_numpy()
@@ -40,16 +44,16 @@ def train(model, x, y):
 	model.fit(x, y)
 	return model
 
-def evaluate(model, x, y, metrics):
+def evaluate(model, x, y, metrics, config):
 	if isinstance(model, mlp.MLP):
-		return mlp.evaluate(model, x, y, metrics)
+		return mlp.evaluate(model, x, y, metrics, config)
 	y_pred = model.predict(x)
 	metrics_info = metrics_util.compute_metrics(y, y_pred, metrics,
 		multioutput="raw_values")
 	return (y_pred, metrics_info)
 
-def infer(model, x, output_size=1):
+def infer(model, x, config, output_size=1):
 	if isinstance(model, mlp.MLP):
-		return mlp.infer(model, x, output_size)
+		return mlp.infer(model, x, output_size, config)
 	y_pred = model.predict(x)
 	return y_pred

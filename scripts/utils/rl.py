@@ -75,7 +75,8 @@ def train(model, env, timesteps):
 	env.render()
 	return model
 
-def evaluate(model, test, config, predict=False):
+def evaluate(model, test, config, predict=False,
+	given_actions=None):
 	if predict and "model_path" in config:
 		print("Using prediction for evaluation...")
 		env = CustomStockEnvPred(test, config)
@@ -83,12 +84,16 @@ def evaluate(model, test, config, predict=False):
 		env = CustomStockEnvDefault(test, config)
 	obs = env.reset()
 	datalen = len(test)
-	no_action = 0
+	action_probs = np.empty(shape=(0, config["total_actions"]))
 	for i in range(datalen):
-		action_prob, stats = model.predict(obs)
+		if given_actions is None:
+			action_prob, stats = model.predict(obs)	
+		else:
+			action_prob = given_actions[i]
+			stats = None
 		action = np.argmax(action_prob)
-		if action == 0:
-			no_action += 1
+		action_probs = np.append(action_probs, action_prob.reshape(
+			(1, config["total_actions"])), axis=0)
 		obs, reward, done, info = env.step(action_prob)
 		if i % config["print_step"] == 0:
 			weight = test.iloc[i][config["weight_col"]]
@@ -98,9 +103,11 @@ def evaluate(model, test, config, predict=False):
 			env.render()
 	print("Test result: ")
 	env.render()
+	actions = np.argmax(action_probs, axis=0)
+	no_action = len(list(filter(lambda x: x == 0, actions)))
 	print(f"No action taken for data point: {no_action} / {datalen}")
 	computed_u, _ = env.compute_u()
-	return (no_action, computed_u)
+	return (action_probs, computed_u)
 
 def save(model, output_path):
 	model.save(output_path)
