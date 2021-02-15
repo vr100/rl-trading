@@ -112,8 +112,7 @@ def train_evaluate(data_folder, output_folder, autoencoder_path,
 	with open(result_path, "w") as result_file:
 		result_file.write(json_config)
 
-	model_path = os.path.join(output_folder, "{}-approach-{}.joblib".format(
-		config["regression_algo"], config["approach"]))
+	model_path = os.path.join(output_folder, "regression-model.joblib")
 	joblib.dump(model, model_path)
 
 	x_scaler_path = os.path.join(output_folder, "x-scaler.joblib")
