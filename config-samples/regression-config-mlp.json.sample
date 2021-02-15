@@ -1,6 +1,6 @@
 {
 	"approach": 2,
-	"regression_algo": "mlp",
+	"regression_algo": "mlp_nn",
 	"na_value": "zero",
 	"feature_prefix": "feature_",
 	"layers": 5,
@@ -8,5 +8,6 @@
 	"lr": 0.0001,
 	"epochs": 20,
 	"batch_size": 256,
-	"weight_decay": 0.005
+	"weight_decay": 0.005,
+	"ensemble_type": "none"
 }

@@ -8,8 +8,8 @@ import utils.mlp as mlp
 import utils.misc as helper
 import numpy as np
 
-def get_model(reg_type, x_size, y_size, config):
-
+def get_model(x_size, y_size, config):
+	reg_type = config["regression_algo"]
 	if reg_type == "linear":
 		return LinearRegression()
 	elif reg_type == "ridge":
@@ -29,6 +29,8 @@ def get_model(reg_type, x_size, y_size, config):
 		return RandomForestRegressor(n_jobs=job_count,
 			max_depth=max_depth, random_state=random_state)
 	elif reg_type == "mlp":
+		return MLPRegressor()
+	elif reg_type == "mlp_nn":
 		return mlp.get_model(x_size, y_size, config)
 	else:
 		print("unknown regression model type {}".format(reg_type))

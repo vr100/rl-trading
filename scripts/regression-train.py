@@ -1,5 +1,5 @@
 import argparse, os, json, joblib, torch
-from utils import regression, dataset, autoencoder, scaler
+from utils import regression, dataset, autoencoder, scaler, ensemble_regression
 
 X_SKIP_COLS = ["date", "weight", "ts_id", "resp", "resp_1", "resp_2", "resp_3", "resp_4"]
 Y_OUTPUT_COLS = ["date", "ts_id"]
@@ -67,6 +67,24 @@ def postprocess_data(out_data, y_pred, config):
 			index = index + 1
 	return y_out
 
+def regression_path(train, test, config, x_size, y_size):
+	model = regression.get_model(x_size, y_size, config)
+	print("Training...")
+	model = regression.train(model, train["x"], train["y"], config)
+	print("Evaluating...")
+	(y_pred, metrics) = regression.evaluate(model, test["x"],
+		test["y"], METRICS_INFO, config)
+	return (model, y_pred, metrics)
+
+def ensemble_path(train, test, config, x_size, y_size):
+	model = ensemble_regression.get_model(x_size, y_size, config)
+	print("Training...")
+	model = ensemble_regression.train(model, train["x"], train["y"])
+	print("Evaluating...")
+	(y_pred, metrics) = ensemble_regression.evaluate(model, test["x"],
+		test["y"], METRICS_INFO)
+	return (model, y_pred, metrics)
+
 def train_evaluate(data_folder, output_folder, autoencoder_path,
 	config, fast_mode):
 	print("Preparing data...")
@@ -75,16 +93,15 @@ def train_evaluate(data_folder, output_folder, autoencoder_path,
 	y_size = len(get_cols_for_approach(config["approach"]))
 	x_size = train["x"].shape[1] if autoencoder_path is None else \
 		config["autoencoder_output_features"]
-	model = regression.get_model(config["regression_algo"],
-		x_size, y_size, config)
-	print("Training...")
-	model = regression.train(model, train["x"], train["y"], config)
-	print("Evaluating...")
-	(y_pred, metrics) = regression.evaluate(model, test["x"],
-		test["y"], METRICS_INFO, config)
+	if config["ensemble_type"] == "none":
+		(model, y_pred, metrics) = regression_path(train, test,
+			config, x_size, y_size)
+	else:
+		(model, y_pred, metrics) = ensemble_path(train, test,
+			config, x_size, y_size)
+
 	print("Postprocessing data...")
 	y_output = postprocess_data(test["out"], y_pred, config)
-
 	output_path = os.path.join(output_folder, "pred.csv")
 	y_output.to_csv(output_path, index=False)
 
