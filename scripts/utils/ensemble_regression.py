@@ -7,8 +7,16 @@ import numpy as np
 def _get_estimators(x_size, y_size, config):
 	estimator_count = config["estimator_count"]
 	estimators = []
+	reg_type = config["regression_algo"]
 	for i in range(estimator_count):
-		model = regression.get_model(x_size, y_size, config)
+		if isinstance(reg_type, list):
+			new_config = config.copy()
+			index = i % len(reg_type)
+			new_config["regression_algo"] = reg_type[index]
+			new_config["job_count"] = 1
+			model = regression.get_model(x_size, y_size, new_config)
+		else:
+			model = regression.get_model(x_size, y_size, config)
 		estimators.append((f"{i}", model))
 	return estimators
 
