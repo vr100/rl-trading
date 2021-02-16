@@ -1,4 +1,4 @@
-import argparse, os, json, joblib, torch
+import argparse, os, json, joblib, torch, time
 from utils import regression, dataset, autoencoder, scaler, ensemble_regression
 
 X_SKIP_COLS = ["date", "weight", "ts_id", "resp", "resp_1", "resp_2", "resp_3", "resp_4"]
@@ -159,4 +159,7 @@ def main():
 	train_evaluate(data_path, output_path, autoencoder_path,
 		config, fast_mode)
 
+start_time = time.time()
 main()
+end_time = round(time.time() - start_time, 2)
+print(f"Total time taken: {end_time} seconds")
