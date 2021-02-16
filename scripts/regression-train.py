@@ -5,23 +5,13 @@ X_SKIP_COLS = ["date", "weight", "ts_id", "resp", "resp_1", "resp_2", "resp_3", 
 Y_OUTPUT_COLS = ["date", "ts_id"]
 METRICS_INFO = ["mse", "rmse", "r2", "ev", "mae", "mape"]
 
-def get_cols_for_approach(approach):
-	if approach == 1:
-		return ["resp_1", "resp_2", "resp_3", "resp_4"]
-	if approach == 2:
-		return ["resp"]
-	if approach == 3:
-		return ["resp", "resp_1", "resp_2", "resp_3", "resp_4"]
-	print("Invalid approach value: {}".format(approach))
-	exit()
-
 def load_model(model_path):
 	model = torch.load(model_path)
 	model.eval()
 	return model
 
 def prepare_data(data_folder, model_path, config, fast_mode):
-	y_cols = get_cols_for_approach(config["approach"])
+	y_cols = config["y_cols"]
 	(train, test, na_value) = dataset.read_data(data_folder,
 		fast_mode, na_value=config["na_value"])
 	if "selected_features" in config:
@@ -55,7 +45,7 @@ def prepare_data(data_folder, model_path, config, fast_mode):
 	return (train_data, test_data, data_scaler, na_value)
 
 def postprocess_data(out_data, y_pred, config):
-	y_cols = get_cols_for_approach(config["approach"])
+	y_cols = config["y_cols"]
 	y_out = out_data.copy()
 	if len(y_cols) == 1:
 		col = y_cols[0]
@@ -90,7 +80,7 @@ def train_evaluate(data_folder, output_folder, autoencoder_path,
 	print("Preparing data...")
 	(train, test, scalers, na_value) = prepare_data(data_folder,
 		autoencoder_path, config, fast_mode)
-	y_size = len(get_cols_for_approach(config["approach"]))
+	y_size = len(config["y_cols"])
 	x_size = train["x"].shape[1] if autoencoder_path is None else \
 		config["autoencoder_output_features"]
 	if config["ensemble_type"] == "none":

@@ -1,5 +1,5 @@
 {
-	"approach": 1,
+	"y_cols": ["resp"]
 	"regression_algo": "mlp",
 	"autoencoder_output_features": 64,
 	"na_value": "zero",

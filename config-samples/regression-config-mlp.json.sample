@@ -1,5 +1,5 @@
 {
-	"approach": 2,
+	"y_cols": ["resp"],
 	"regression_algo": "mlp_nn",
 	"na_value": "zero",
 	"feature_prefix": "feature_",

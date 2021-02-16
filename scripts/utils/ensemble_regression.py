@@ -3,7 +3,6 @@ import utils.misc as helper
 import utils.metrics as metrics_util
 from sklearn.ensemble import VotingRegressor, AdaBoostRegressor, StackingRegressor, BaggingRegressor
 import numpy as np
-from sklearn.multioutput import MultiOutputRegressor
 
 def _get_estimators(x_size, y_size, config):
 	estimator_count = config["estimator_count"]
@@ -44,17 +43,14 @@ def get_model(x_size, y_size, config):
 	else:
 		print("Unknown ensemble {}".format(ensemble_type))
 		exit()
-	if y_size > 1:
-		return MultiOutputRegressor(model)
-	else:
-		return model
+	return model
 
 def train(model, x, y):
 	if not isinstance(x, np.ndarray):
 		x = x.to_numpy()
 		y = y.to_numpy()
 	x = helper.add_gaussian_noise(x)
-	model.fit(x, y)
+	model = model.fit(x, y)
 	return model
 
 def evaluate(model, x, y, metrics):
