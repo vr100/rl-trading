@@ -59,6 +59,6 @@ def evaluate(model, x, y, metrics):
 		multioutput="raw_values")
 	return (y_pred, metrics_info)
 
-def infer(model, x, config):
+def infer(model, x):
 	y_pred = model.predict(x)
 	return y_pred

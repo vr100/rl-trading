@@ -1,6 +1,6 @@
 from .customstockenv import CustomStockEnv
 import joblib
-from utils import regression, scaler
+from utils import regression, scaler, ensemble_regression
 import pandas as pd
 
 class CustomStockEnvPred(CustomStockEnv):
@@ -23,7 +23,13 @@ class CustomStockEnvPred(CustomStockEnv):
 		data = data.append(data_row, ignore_index=True)
 		if self.x_scaler is not None:
 			data, _ = scaler.scale_data(data, self.x_scaler)
-		pred = regression.infer(self.model, data, self.config)
+		if self.config["model_type"] == "ensemble":
+			pred = ensemble_regression.infer(self.model, data)
+		else:
+			pred = regression.infer(self.model, data, self.config)
 		if self.y_scaler is not None:
 			pred, _ = scaler.scale_data(pred, self.y_scaler)
-		return pred[0][0]
+		if len(pred.shape) == 1:
+			return pred[0]
+		else:
+			return pred[0][0]

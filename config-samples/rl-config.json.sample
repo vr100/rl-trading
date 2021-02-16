@@ -10,5 +10,6 @@
 	"print_step": 10000,
 	"model_path": "/workspace/model.joblib",
 	"x_scaler_path": "/workspace/x-scaler.joblib",
-	"y_scaler_path": "/workspace/y-scaler.joblib"
+	"y_scaler_path": "/workspace/y-scaler.joblib",
+	"model_type": "ensemble"
 }
