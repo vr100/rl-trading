@@ -31,6 +31,14 @@ def get_result(action_probs, u):
 	action_1 = len(list(filter(lambda x: x == 1, actions)))
 	return {"action_0": action_0, "action_1": action_1, "u": u}
 
+def get_action_match_ratio(action_probs, pred_action_probs):
+	eval_actions = np.argmax(action_probs, axis=1)
+	pred_actions = np.argmax(pred_action_probs, axis=1)
+	same_action = [int(item[0] == item[1]) \
+		for item in zip(eval_actions, pred_actions)]
+	same_action_ratio = len(same_action) / len(eval_actions)
+	return same_action_ratio
+
 def train_rl(data_folder, output_folder, config, fast_mode,
 	random_mode):
 	print("Preparing data...")
@@ -62,8 +70,10 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	eval_result = get_result(action_probs, u)
 	pred_result = get_result(pred_action_probs, pred_u)
 	next_eval_result = get_result(next_action_probs, next_u)
+	same_action_ratio = get_action_match_ratio(action_probs, pred_action_probs)
 	result = { "datalen": len(test), "eval": eval_result,
-		"pred": pred_result, "eval_with_pred": next_eval_result }
+		"pred": pred_result, "eval_with_pred": next_eval_result,
+		"action_match_ratio": same_action_ratio }
 	output_path = os.path.join(output_folder, "result.json")
 	json_result = json.dumps(result, indent=4)
 	with open(output_path, "w") as result_file:
