@@ -56,8 +56,8 @@ class MLP(nn.Module):
 		x = self.layers(x)
 		return x
 
-def get_model(input_size, expected_size):
-	return MLP(input_size, expected_size)
+def get_model(input_size, expected_size, config):
+	return MLP(input_size, expected_size, config)
 
 def train(model, x, y, config):
 	lr = config["lr"]
@@ -93,12 +93,11 @@ def train(model, x, y, config):
 	return model
 
 def evaluate(model, x, y, metrics, config):
-	batch_size = config["batch_size"]
 	x = helper.get_torch_representation(x, DEVICE)
 	y = helper.get_torch_representation(y, DEVICE)
 	if len(y.shape) == 1:
 		y = torch.reshape(y, shape=(y.shape[0], 1))
-	pred = infer(model, x, y.shape[1], batch_size)
+	pred = infer(model, x, y.shape[1], config)
 	metrics_info = metrics_util.compute_metrics(y, pred, metrics,
 		multioutput="raw_values")
 	return (pred, metrics_info)
