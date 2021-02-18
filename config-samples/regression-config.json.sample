@@ -6,5 +6,6 @@
 	"job_count": 1,
 	"feature_prefix": "feature_",
 	"batch_size": 256,
-	"ensemble_type": "none"
+	"ensemble_type": "none",
+	"x_scaler_type": "quantile"
 }

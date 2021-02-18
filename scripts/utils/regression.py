@@ -29,7 +29,16 @@ def get_model(x_size, y_size, config):
 		return RandomForestRegressor(n_jobs=job_count,
 			max_depth=max_depth, random_state=random_state)
 	elif reg_type == "mlp":
-		return MLPRegressor()
+		early_stopping = config["early_stopping"]
+		random_state =  config["random_state"]
+		shuffle = config["shuffle"]
+		lr = config["lr"]
+		hidden_layer_sizes = config["hidden_layer_sizes"]
+		activation = config["activation"]
+		return MLPRegressor(early_stopping=early_stopping,
+			random_state=random_state, shuffle=shuffle, verbose=True,
+			learning_rate_init=lr, hidden_layer_sizes=hidden_layer_sizes,
+			activation=activation)
 	elif reg_type == "mlp_nn":
 		return mlp.get_model(x_size, y_size, config)
 	else:

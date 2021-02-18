@@ -25,7 +25,9 @@ def prepare_data(data_folder, model_path, config, fast_mode):
 	out_train = train[Y_OUTPUT_COLS]
 	out_test = test[Y_OUTPUT_COLS]
 
-	(x_train, x_scaler) = scaler.scale_data(x_train, scaler_type="quantile")
+	x_scaler_type = config["x_scaler_type"]
+	(x_train, x_scaler) = scaler.scale_data(x_train,
+		scaler_type=x_scaler_type)
 	(y_train, y_scaler) = scaler.scale_data(y_train)
 	(x_test, x_scaler) = scaler.scale_data(x_test, x_scaler)
 	(y_test, y_scaler) = scaler.scale_data(y_test, y_scaler)
