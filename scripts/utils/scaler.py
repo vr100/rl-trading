@@ -1,4 +1,4 @@
-from sklearn.preprocessing import RobustScaler, StandardScaler, QuantileTransformer, PowerTransformer
+from sklearn.preprocessing import RobustScaler, StandardScaler, QuantileTransformer, PowerTransformer, MinMaxScaler
 
 class IdentityScaler():
 
@@ -19,6 +19,8 @@ def get_scaler(scaler_type):
 		return PowerTransformer()
 	if scaler_type == "identity":
 		return IdentityScaler()
+	if scaler_type == "minmax":
+		return MinMaxScaler()
 	print("unknown scaler type {}".format(scaler_type))
 	exit()
 
