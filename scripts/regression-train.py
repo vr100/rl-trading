@@ -1,5 +1,5 @@
 import argparse, os, json, joblib, torch, time
-from utils import regression, dataset, autoencoder, scaler, ensemble_regression
+from utils import regression, dataset, autoencoder, scaler, ensemble_regression, residuals
 
 X_SKIP_COLS = ["date", "weight", "ts_id", "resp", "resp_1", "resp_2", "resp_3", "resp_4"]
 Y_OUTPUT_COLS = ["date", "ts_id"]
@@ -91,9 +91,17 @@ def train_evaluate(data_folder, output_folder, autoencoder_path,
 			config, x_size, y_size)
 
 	print("Postprocessing data...")
+
+	if not os.path.exists(output_folder):
+		print(f"folder: {output_folder} does not exist, creating...")
+		os.mkdir(output_folder)
+
 	y_output = postprocess_data(test["out"], y_pred, config)
 	output_path = os.path.join(output_folder, "pred.csv")
 	y_output.to_csv(output_path, index=False)
+
+	# plotting residual related analysis
+	residuals.plot(test["y"], y_pred, output_folder)
 
 	result = { "metrics": metrics, "input_config": config,
 		"fast_mode": fast_mode, "na_value": na_value }
