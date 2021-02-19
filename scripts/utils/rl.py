@@ -4,19 +4,48 @@ from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from env.customstockenvdefault import CustomStockEnvDefault
 from env.customstockenvpred import CustomStockEnvPred
 import numpy as np
+from functools import partial
 
 DEFAULT_VALUES = {
 	"ent_coef": 0.005,
 	"sigma": 0.5
 }
 
-def get_value(config, name):
+A2C_DEFAULT_VALUES = {
+	"const_lr": 7e-4,
+	"var_lr": 0,
+	"gamma": 0.99,
+	"use_rms_prop": True,
+	"gae_lambda": 1.0,
+	"seed": None,
+	"ent_coef": 0.0,
+	"vf_coef": 0.5,
+	"use_sde": False
+}
+
+def get_value(config, name, default=DEFAULT_VALUES):
 	if name not in config:
-		return DEFAULT_VALUES[name]
+		return default[name]
 	return config[name]
 
+def a2c_lr_sched(config, progress):
+	const_lr = get_value(config, "const_lr", default=A2C_DEFAULT_VALUES)
+	var_lr = get_value(config, "var_lr", default=A2C_DEFAULT_VALUES)
+	return const_lr - (1 - progress) * var_lr
+
 def get_a2c_model(env, config):
-	return A2C("MlpPolicy", env, verbose=1)
+	params = config["params"]
+	lr_fn = partial(a2c_lr_sched, params)
+	gamma = get_value(params, "gamma", default=A2C_DEFAULT_VALUES)
+	use_rms_prop = get_value(params, "use_rms_prop", default=A2C_DEFAULT_VALUES)
+	gae_lambda = get_value(params, "gae_lambda", default=A2C_DEFAULT_VALUES)
+	seed = get_value(params, "seed", default=A2C_DEFAULT_VALUES)
+	ent_coef = get_value(params, "ent_coef", default=A2C_DEFAULT_VALUES)
+	vf_coef = get_value(params, "vf_coef", default=A2C_DEFAULT_VALUES)
+	use_sde = get_value(params, "use_sde", default=A2C_DEFAULT_VALUES)
+	return A2C("MlpPolicy", env, verbose=1, learning_rate=lr_fn,
+		gamma=gamma, use_rms_prop=use_rms_prop, gae_lambda=gae_lambda,
+		seed=seed, ent_coef=ent_coef, vf_coef=vf_coef, use_sde=use_sde)
 
 def get_ppo_model(env, config):
 	ent_coef = get_value(config, "ent_coef")
