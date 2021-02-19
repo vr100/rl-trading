@@ -1,4 +1,4 @@
-import os, argparse, json
+import os, argparse, json, time
 from utils import rl, dataset
 import numpy as np
 
@@ -49,6 +49,9 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	(model, env) = rl.get_model(train, config)
 	model = rl.train(model, env, config["repeat_train"] * len(train))
 	print("Saving model...")
+	if not os.path.exists(output_folder):
+		print(f"folder: {output_folder} does not exist, creating...")
+		os.mkdir(output_folder)
 	model_name = config["model"]
 	output_path = os.path.join(output_folder, f"{model_name}.zip")
 	rl.save(model, output_path)
@@ -127,4 +130,7 @@ def main():
 	train_rl(data_path, output_path, config, fast_mode,
 		random_mode)
 
+start_time = time.time()
 main()
+end_time = round(time.time() - start_time, 2)
+print(f"Total time taken: {end_time} seconds")
