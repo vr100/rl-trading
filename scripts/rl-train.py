@@ -46,8 +46,8 @@ def get_action_match_ratio(action_probs, pred_action_probs):
 	same_action_1 = [idx for idx, item in enumerate(zip(action_match, eval_actions)) \
 		if item[0] == True and item[1] == 1]
 	same_action_ratio = len(same_action) / len(eval_actions)
-	same_action_0_ratio = len(same_action_0) / len(eval_action_0)
-	same_action_1_ratio = len(same_action_1) / len(eval_action_1)
+	same_action_0_ratio = len(same_action_0) / len(eval_action_0) if len(eval_action_0) != 0 else 0
+	same_action_1_ratio = len(same_action_1) / len(eval_action_1) if len(eval_action_1) != 0 else 0
 	return (same_action_ratio, same_action_0_ratio, same_action_1_ratio)
 
 def train_rl(data_folder, output_folder, config, fast_mode,
