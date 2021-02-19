@@ -33,11 +33,22 @@ def get_result(action_probs, u):
 
 def get_action_match_ratio(action_probs, pred_action_probs):
 	eval_actions = np.argmax(action_probs, axis=1)
+	eval_action_0 = [idx for idx, item in enumerate(eval_actions) \
+		if item == 0]
+	eval_action_1 = [idx for idx, item in enumerate(eval_actions) \
+		if item == 1]
 	pred_actions = np.argmax(pred_action_probs, axis=1)
-	same_action = [int(item[0] == item[1]) \
+	action_match = [item[0] == item[1] \
 		for item in zip(eval_actions, pred_actions)]
+	same_action = [idx for idx, item in enumerate(action_match) if item == True]
+	same_action_0 = [idx for idx, item in enumerate(zip(action_match, eval_actions)) \
+		if item[0] == True and item[1] == 0]
+	same_action_1 = [idx for idx, item in enumerate(zip(action_match, eval_actions)) \
+		if item[0] == True and item[1] == 1]
 	same_action_ratio = len(same_action) / len(eval_actions)
-	return same_action_ratio
+	same_action_0_ratio = len(same_action_0) / len(eval_action_0)
+	same_action_1_ratio = len(same_action_1) / len(eval_action_1)
+	return (same_action_ratio, same_action_0_ratio, same_action_1_ratio)
 
 def train_rl(data_folder, output_folder, config, fast_mode,
 	random_mode):
@@ -73,10 +84,12 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	eval_result = get_result(action_probs, u)
 	pred_result = get_result(pred_action_probs, pred_u)
 	next_eval_result = get_result(next_action_probs, next_u)
-	same_action_ratio = get_action_match_ratio(action_probs, pred_action_probs)
+	(action_ratio, action_0_ratio, action_1_ratio)  = get_action_match_ratio(action_probs, pred_action_probs)
 	result = { "datalen": len(test), "eval": eval_result,
 		"pred": pred_result, "eval_with_pred": next_eval_result,
-		"action_match_ratio": same_action_ratio }
+		"action_match_ratio": action_ratio,
+		"action_0_ratio": action_0_ratio,
+		"action_1_ratio": action_1_ratio }
 	output_path = os.path.join(output_folder, "result.json")
 	json_result = json.dumps(result, indent=4)
 	with open(output_path, "w") as result_file:
