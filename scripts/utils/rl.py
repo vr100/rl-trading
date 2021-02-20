@@ -6,10 +6,7 @@ from env.customstockenvpred import CustomStockEnvPred
 import numpy as np
 from functools import partial
 
-DEFAULT_VALUES = {
-	"ent_coef": 0.005,
-	"sigma": 0.5
-}
+DEFAULT_VALUES = {}
 
 A2C_DEFAULT_VALUES = {
 	"const_lr": 7e-4,
@@ -50,6 +47,23 @@ DDPG_DEFAULT_VALUES = {
 	"optimize_memory_usage": False,
 	"seed": None,
 	"train_freq": -1,
+	"sigma": 0.5
+}
+
+SAC_DEFAULT_VALUES = {
+	"const_lr": 3e-4,
+	"var_lr": 0,
+	"buffer_size": int(1e6),
+	"learning_starts": 100,
+	"tau": 0.005,
+	"gamma": 0.99,
+	"train_freq": 1,
+	"optimize_memory_usage": False,
+	"ent_coef": "auto",
+	"use_sde": False,
+	"target_update_interval": 1,
+	"target_entropy": "auto",
+	"seed": None,
 	"sigma": 0.5
 }
 
@@ -131,13 +145,30 @@ def get_ddpg_model(env, config):
 		train_freq=train_freq)
 
 def get_sac_model(env, config):
-	ent_coef = get_value(config, "ent_coef")
-	sigma = get_value(config, "sigma")
+	params = config["params"]
+	lr_fn = partial(lr_sched, params, SAC_DEFAULT_VALUES)
+	buffer_size = get_value(params, "buffer_size", default=SAC_DEFAULT_VALUES)
+	learning_starts = get_value(params, "learning_starts", default=SAC_DEFAULT_VALUES)
+	tau = get_value(params, "tau", default=SAC_DEFAULT_VALUES)
+	gamma = get_value(params, "gamma", default=SAC_DEFAULT_VALUES)
+	train_freq = get_value(params, "train_freq", default=SAC_DEFAULT_VALUES)
+	optimize_memory_usage = get_value(params, "optimize_memory_usage", default=SAC_DEFAULT_VALUES)
+	ent_coef = get_value(params, "ent_coef", default=SAC_DEFAULT_VALUES)
+	use_sde = get_value(params, "use_sde", default=SAC_DEFAULT_VALUES)
+	target_update_interval = get_value(params, "target_update_interval", default=SAC_DEFAULT_VALUES)
+	target_entropy = get_value(params, "target_entropy", default=SAC_DEFAULT_VALUES)
+	seed = get_value(params, "seed", default=SAC_DEFAULT_VALUES)
+	sigma = get_value(params, "sigma", default=SAC_DEFAULT_VALUES)
 	action_count = config["total_actions"]
 	action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(action_count),
 		sigma=float(sigma) * np.ones(action_count))
-	return SAC("MlpPolicy", env, ent_coef=ent_coef,
-		action_noise=action_noise, verbose=1)
+	return SAC("MlpPolicy", env, action_noise=action_noise,
+		verbose=1, learning_rate=lr_fn, buffer_size=buffer_size,
+		learning_starts=learning_starts, tau=tau, gamma=gamma,
+		train_freq=train_freq, optimize_memory_usage=optimize_memory_usage,
+		ent_coef=ent_coef, use_sde=use_sde,
+		target_update_interval=target_update_interval,
+		target_entropy=target_entropy, seed=seed)
 
 MODEL_FN = {
 	"A2C": get_a2c_model,
