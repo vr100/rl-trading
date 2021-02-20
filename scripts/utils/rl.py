@@ -24,19 +24,45 @@ A2C_DEFAULT_VALUES = {
 	"n_steps": 5
 }
 
+PPO_DEFAULT_VALUES = {
+	"const_lr": 3e-4,
+	"var_lr": 0,
+	"gamma": 0.99,
+	"gae_lambda": 0.95,
+	"const_clip_range": 0.2,
+	"var_clip_range": 0.0,
+	"const_clip_range_vf": None,
+	"var_clip_range_vf": None,
+	"ent_coef": 0.0,
+	"vf_coef": 0.5,
+	"n_steps": 2048,
+	"use_sde": False,
+	"seed": None
+}
+
 def get_value(config, name, default=DEFAULT_VALUES):
 	if name not in config:
 		return default[name]
 	return config[name]
 
-def a2c_lr_sched(config, progress):
-	const_lr = get_value(config, "const_lr", default=A2C_DEFAULT_VALUES)
-	var_lr = get_value(config, "var_lr", default=A2C_DEFAULT_VALUES)
+def clip_sched(config, default, progress):
+	const_clip = get_value(config, "const_clip_range", default)
+	var_clip = get_value(config, "var_clip_range", default)
+	return const_clip - (1 - progress) * var_clip
+
+def clip_vf_sched(config, default, progress):
+	const_clip = get_value(config, "const_clip_range_vf", default)
+	var_clip = get_value(config, "var_clip_range_vf", default)
+	return const_clip - (1 - progress) * var_clip
+
+def lr_sched(config, default, progress):
+	const_lr = get_value(config, "const_lr", default)
+	var_lr = get_value(config, "var_lr", default)
 	return const_lr - (1 - progress) * var_lr
 
 def get_a2c_model(env, config):
 	params = config["params"]
-	lr_fn = partial(a2c_lr_sched, params)
+	lr_fn = partial(lr_sched, params, A2C_DEFAULT_VALUES)
 	gamma = get_value(params, "gamma", default=A2C_DEFAULT_VALUES)
 	use_rms_prop = get_value(params, "use_rms_prop", default=A2C_DEFAULT_VALUES)
 	gae_lambda = get_value(params, "gae_lambda", default=A2C_DEFAULT_VALUES)
@@ -51,8 +77,25 @@ def get_a2c_model(env, config):
 		n_steps=n_steps)
 
 def get_ppo_model(env, config):
-	ent_coef = get_value(config, "ent_coef")
-	return PPO("MlpPolicy", env, ent_coef=ent_coef, verbose=1)
+	params = config["params"]
+	lr_fn = partial(lr_sched, params, PPO_DEFAULT_VALUES)
+	const_clip = get_value(params, "const_clip_range", PPO_DEFAULT_VALUES)
+	clip_fn = partial(clip_sched, params, PPO_DEFAULT_VALUES) \
+		if const_clip is not None else None
+	const_clip = get_value(params, "const_clip_range_vf", PPO_DEFAULT_VALUES)
+	clip_vf_fn = partial(clip_vf_sched, params, PPO_DEFAULT_VALUES) \
+		if const_clip is not None else None
+	gamma = get_value(params, "gamma", default=PPO_DEFAULT_VALUES)
+	gae_lambda = get_value(params, "gae_lambda", default=PPO_DEFAULT_VALUES)
+	ent_coef = get_value(params, "ent_coef", default=PPO_DEFAULT_VALUES)
+	vf_coef = get_value(params, "vf_coef", default=PPO_DEFAULT_VALUES)
+	n_steps = get_value(params, "n_steps", default=PPO_DEFAULT_VALUES)
+	use_sde = get_value(params, "use_sde", default=PPO_DEFAULT_VALUES)
+	seed = get_value(params, "seed", default=PPO_DEFAULT_VALUES)
+	return PPO("MlpPolicy", env, verbose=1, learning_rate=lr_fn,
+		clip_range=clip_fn, clip_range_vf=clip_vf_fn, gamma=gamma,
+		gae_lambda=gae_lambda, ent_coef=ent_coef, vf_coef=vf_coef,
+		n_steps=n_steps, use_sde=use_sde, seed=seed)
 
 def get_ddpg_model(env, config):
 	sigma = get_value(config, "sigma")
