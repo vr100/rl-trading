@@ -20,7 +20,8 @@ A2C_DEFAULT_VALUES = {
 	"seed": None,
 	"ent_coef": 0.0,
 	"vf_coef": 0.5,
-	"use_sde": False
+	"use_sde": False,
+	"n_steps": 5
 }
 
 def get_value(config, name, default=DEFAULT_VALUES):
@@ -43,9 +44,11 @@ def get_a2c_model(env, config):
 	ent_coef = get_value(params, "ent_coef", default=A2C_DEFAULT_VALUES)
 	vf_coef = get_value(params, "vf_coef", default=A2C_DEFAULT_VALUES)
 	use_sde = get_value(params, "use_sde", default=A2C_DEFAULT_VALUES)
+	n_steps = get_value(params, "n_steps", default=A2C_DEFAULT_VALUES)
 	return A2C("MlpPolicy", env, verbose=1, learning_rate=lr_fn,
 		gamma=gamma, use_rms_prop=use_rms_prop, gae_lambda=gae_lambda,
-		seed=seed, ent_coef=ent_coef, vf_coef=vf_coef, use_sde=use_sde)
+		seed=seed, ent_coef=ent_coef, vf_coef=vf_coef, use_sde=use_sde,
+		n_steps=n_steps)
 
 def get_ppo_model(env, config):
 	ent_coef = get_value(config, "ent_coef")
