@@ -40,6 +40,19 @@ PPO_DEFAULT_VALUES = {
 	"seed": None
 }
 
+DDPG_DEFAULT_VALUES = {
+	"const_lr": 1e-3,
+	"var_lr": 0,
+	"buffer_size": int(1e6),
+	"learning_starts": 100,
+	"tau": 0.005,
+	"gamma": 0.95,
+	"optimize_memory_usage": False,
+	"seed": None,
+	"train_freq": -1,
+	"sigma": 0.5
+}
+
 def get_value(config, name, default=DEFAULT_VALUES):
 	if name not in config:
 		return default[name]
@@ -98,12 +111,24 @@ def get_ppo_model(env, config):
 		n_steps=n_steps, use_sde=use_sde, seed=seed)
 
 def get_ddpg_model(env, config):
-	sigma = get_value(config, "sigma")
+	params = config["params"]
+	lr_fn = partial(lr_sched, params, DDPG_DEFAULT_VALUES)
+	buffer_size = get_value(params, "buffer_size", default=DDPG_DEFAULT_VALUES)
+	learning_starts = get_value(params, "learning_starts", default=DDPG_DEFAULT_VALUES)
+	tau = get_value(params, "tau", default=DDPG_DEFAULT_VALUES)
+	gamma = get_value(params, "gamma", default=DDPG_DEFAULT_VALUES)
+	optimize_memory_usage = get_value(params, "optimize_memory_usage", default=DDPG_DEFAULT_VALUES)
+	seed = get_value(params, "seed", default=DDPG_DEFAULT_VALUES)
+	train_freq = get_value(params, "train_freq", default=DDPG_DEFAULT_VALUES)
+	sigma = get_value(params, "sigma", default=DDPG_DEFAULT_VALUES)
 	action_count = config["total_actions"]
 	action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(action_count),
 		sigma=float(sigma) * np.ones(action_count))
 	return DDPG("MlpPolicy", env, action_noise=action_noise,
-		verbose=1)
+		verbose=1, learning_rate=lr_fn, buffer_size=buffer_size,
+		learning_starts=learning_starts, tau=tau, gamma=gamma,
+		optimize_memory_usage=optimize_memory_usage, seed=seed,
+		train_freq=train_freq)
 
 def get_sac_model(env, config):
 	ent_coef = get_value(config, "ent_coef")
