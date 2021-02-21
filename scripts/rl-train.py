@@ -2,6 +2,8 @@ import os, argparse, json, time
 from utils import rl, dataset
 import numpy as np
 
+SORT_BY = ["date", "ts_id"]
+
 def prefill_config(data, config):
 	if "feature_cols" not in config:
 		feature_cols = [col for col in data if col.startswith(
@@ -23,6 +25,8 @@ def prepare_data(data_folder, fast_mode, random_mode, config):
 	(train, test, na_value) = dataset.read_data(data_folder,
 		fast_mode=fast_mode, na_value=config["na_value"],
 		random_mode=random_mode)
+	train = train.sort_values(by=SORT_BY)
+	test = test.sort_values(by=SORT_BY)
 	return (train, test, na_value)
 
 def get_result(action_probs, u):
@@ -95,6 +99,21 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	with open(output_path, "w") as result_file:
 		result_file.write(json_result)
 	print("Done...")
+	final_data = { "loss": (-next_u), "output": output_folder,
+		"result": result, "config": config, "input": data_folder}
+	return final_data
+
+def update_features(features_path, config):
+	if features_path is None:
+		return config
+	features_path = os.path.abspath(features_path)
+	with open(features_path, "r") as json_file:
+		features = json.load(json_file)
+	selected_features = features["selected_feature_indices"]
+	print(f"Selected features: {selected_features}")
+	prefix = config["feature_prefix"]
+	config["feature_cols"] = [ f"{prefix}{i}" for i in selected_features]
+	return config
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -108,7 +127,7 @@ def parse_args():
 		"--config_path", type=str, help="specifies the json config path",
 		required=True)
 	parser.add_argument(
-		"--features_path", type=str, help="specifies the boruta algo feature selection results json file path",
+		"--features_path", type=str, help="specifies the feature selection results json file path",
 		default=None)
 	parser.add_argument(
 		"--fast_mode", default=False,
@@ -131,19 +150,17 @@ def main():
 		config = json.load(json_file)
 	print(f"Config: {config}")
 
-	if args["features_path"] is not None:
-		features_path = os.path.abspath(args["features_path"])
-		with open(features_path, "r") as json_file:
-			features = json.load(json_file)
-		selected_features = features["selected_feature_indices"]
-		print(f"Selected features: {selected_features}")
-		prefix = config["feature_prefix"]
-		config["feature_cols"] = [ f"{prefix}{i}" for i in selected_features]
+	features_path = args["features_path"]
+	config = update_features(features_path, config)
 
 	train_rl(data_path, output_path, config, fast_mode,
 		random_mode)
 
-start_time = time.time()
-main()
-end_time = round(time.time() - start_time, 2)
-print(f"Total time taken: {end_time} seconds")
+def time_wrapped_main():
+	start_time = time.time()
+	main()
+	end_time = round(time.time() - start_time, 2)
+	print(f"Total time taken: {end_time} seconds")
+
+if __name__ == "__main__":
+	time_wrapped_main()

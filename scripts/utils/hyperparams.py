@@ -40,11 +40,11 @@ def objective_fn(train_fn, data_folder, output_folder,
 	return data
 
 def train_and_evaluate(data_folder, output_folder, params_path,
-	fast_mode, train_fn):
+	fast_mode, train_fn, max_evals=MAX_EVALS):
 	hyperparams = load_params(params_path)
 	trials = Trials()
 	objective = partial(objective_fn, train_fn, data_folder,
 		output_folder, fast_mode)
 	tpe_best = fmin(fn=objective, space=hyperparams,
-		algo=tpe.suggest, trials=trials, max_evals=MAX_EVALS)
+		algo=tpe.suggest, trials=trials, max_evals=max_evals)
 	return (trials, tpe_best)

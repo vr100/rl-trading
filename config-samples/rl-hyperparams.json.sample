@@ -1,0 +1,50 @@
+{
+	"const_lr": {
+		"function": "choice",
+		"args": [0.0001, 0.0003, 0.0005, 0.001]
+	},
+	"var_lr": {
+		"function": "choice",
+		"args": [0, 0.0001, 0.00025]
+	},
+	"buffer_size": {
+		"function": "choice",
+		"args": [1000000, 10000, 1000]
+	},
+	"learning_starts": {
+		"function": "choice",
+		"args": [50, 100, 500]
+	},
+	"tau": {
+		"function": "choice",
+		"args": [0, 0.005, 0.01, 0.1]
+	},
+	"gamma": {
+		"function": "choice",
+		"args": [1.0, 0.99, 0.9, 0.75]
+	},
+	"train_freq": {
+		"function": "choice",
+		"args": [1, 5, 10]
+	},
+	"ent_coef": {
+		"function": "choice",
+		"args": ["auto", 0.0, 0.1]
+	},
+	"use_sde": {
+		"function": "choice",
+		"args": [true, false]
+	},
+	"sigma": {
+		"function": "choice",
+		"args": [0.5, 0.75]
+	},
+	"target_update_interval": {
+		"function": "choice",
+		"args": [1, 5]
+	},
+	"target_entropy": {
+		"function": "choice",
+		"args": ["auto", 0.0, 0.1]
+	}
+}

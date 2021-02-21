@@ -1,0 +1,13 @@
+{
+	"na_value": "zero",
+	"feature_prefix": "feature_",
+	"weight_col": "weight",
+	"response_col": "resp",
+	"episode_col": "date",
+	"total_actions": 2,
+	"model": "SAC",
+	"repeat_train": 1,
+	"print_step": 10000,
+	"model_type": "regression",
+	"max_evals": 20
+}
