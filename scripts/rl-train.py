@@ -62,19 +62,24 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	config = prefill_config(train, config)
 	print("Training the model...")
 	(model, env) = rl.get_model(train, config)
-	model = rl.train(model, env, config["repeat_train"] * len(train))
+	(model, train_u) = rl.train(model, env, config["repeat_train"] * len(train))
+	print("Training the model with prediction...")
+	(model_pred, env_pred) = rl.get_model(train, config, predict=True)
+	(model_pred, train_pred_u) = rl.train(model_pred, env_pred, config["repeat_train"] * len(train))
 	print("Saving model...")
 	if not os.path.exists(output_folder):
 		print(f"folder: {output_folder} does not exist, creating...")
 		os.mkdir(output_folder)
 	model_name = config["model"]
-	output_path = os.path.join(output_folder, f"{model_name}.zip")
-	rl.save(model, output_path)
-	print(f"Model saved to {output_path}")
+	model_path = os.path.join(output_folder, f"{model_name}.zip")
+	rl.save(model, model_path)
+	model_pred_path = os.path.join(output_folder, f"{model_name}_pred.zip")
+	rl.save(model_pred, model_pred_path)
+	print(f"Models saved to {output_folder}")
 	print("Loading model...")
-	(model, train_u) = rl.load(output_path, config)
+	model = rl.load(model_path, config)
+	model_pred = rl.load(model_pred_path, config)
 	print("Evaluating the model...")
-	test = test.sort_values(by=[config["episode_col"]])
 	config = prefill_config(test, config)
 	(action_probs, u) = rl.evaluate(model, test, config)
 	print("Evaluating the model with prediction ...")
@@ -83,15 +88,25 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	print("Evaluation with predict actions ...")
 	(next_action_probs, next_u) = rl.evaluate(model, test, config,
 		given_actions=pred_action_probs)
+	print("Evaluating the pred model with prediction ...")
+	(mp_pred_action_probs, mp_pred_u) = rl.evaluate(model_pred, test, config,
+		predict=True)
+	print("Evaluating the pred model with predict actions ...")
+	(mp_next_action_probs, mp_next_u) = rl.evaluate(model_pred, test, config,
+		given_actions=mp_pred_action_probs)
 	output_path = os.path.join(output_folder, "config.json")
 	save_config(output_path, config)
 	eval_result = get_result(action_probs, u)
 	pred_result = get_result(pred_action_probs, pred_u)
 	next_eval_result = get_result(next_action_probs, next_u)
+	mp_pred_result = get_result(mp_pred_action_probs, mp_pred_u)
+	mp_next_result = get_result(mp_next_action_probs, mp_next_u)
 	(action_ratio, action_0_ratio, action_1_ratio)  = get_action_match_ratio(action_probs, pred_action_probs)
 	result = { "datalen": len(test), "eval": eval_result,
 		"pred": pred_result, "eval_with_pred": next_eval_result,
-		"train_u": train_u, "action_match_ratio": action_ratio,
+		"train_pred": mp_pred_result, "train_eval_with_pred": mp_next_result,
+		"train_u": train_u, "train_pred_u": train_pred_u,
+		"action_match_ratio": action_ratio,
 		"action_0_ratio": action_0_ratio,
 		"action_1_ratio": action_1_ratio }
 	output_path = os.path.join(output_folder, "result.json")
@@ -99,7 +114,7 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	with open(output_path, "w") as result_file:
 		result_file.write(json_result)
 	print("Done...")
-	final_data = { "loss": (-next_u),
+	final_data = { "loss": (-mp_next_u),
 		"output": output_folder, "result": result,
 		"config": config, "input": data_folder}
 	return final_data

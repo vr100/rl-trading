@@ -194,8 +194,12 @@ def get_class(model_name):
 	clz = getattr(module, model_name)
 	return clz
 
-def get_model(data, config):
-	env = CustomStockEnvDefault(data, config)
+def get_model(data, config, predict=False):
+	if predict and "model_path" in config:
+		print("Using prediction for training...")
+		env = CustomStockEnvPred(test, config)
+	else:
+		env = CustomStockEnvDefault(test, config)
 	model_fn = get_model_fn(config["model"])
 	model = model_fn(env, config)
 	return (model, env)
