@@ -72,7 +72,7 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	rl.save(model, output_path)
 	print(f"Model saved to {output_path}")
 	print("Loading model...")
-	model = rl.load(output_path, config)
+	(model, train_u) = rl.load(output_path, config)
 	print("Evaluating the model...")
 	test = test.sort_values(by=[config["episode_col"]])
 	config = prefill_config(test, config)
@@ -91,7 +91,7 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	(action_ratio, action_0_ratio, action_1_ratio)  = get_action_match_ratio(action_probs, pred_action_probs)
 	result = { "datalen": len(test), "eval": eval_result,
 		"pred": pred_result, "eval_with_pred": next_eval_result,
-		"action_match_ratio": action_ratio,
+		"train_u": train_u, "action_match_ratio": action_ratio,
 		"action_0_ratio": action_0_ratio,
 		"action_1_ratio": action_1_ratio }
 	output_path = os.path.join(output_folder, "result.json")

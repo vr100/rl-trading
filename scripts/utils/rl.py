@@ -204,7 +204,8 @@ def train(model, env, timesteps):
 	model = model.learn(total_timesteps=timesteps)
 	print("Training result: ")
 	env.render()
-	return model
+	u,_ = env.compute_u()
+	return (model, u)
 
 def evaluate(model, test, config, predict=False,
 	given_actions=None):
