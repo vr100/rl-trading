@@ -3,6 +3,7 @@ from utils import rl, dataset
 import numpy as np
 
 SORT_BY = ["date", "ts_id"]
+LARGE_NUMBER = 1e6
 
 def prefill_config(data, config):
 	if "feature_cols" not in config:
@@ -99,8 +100,9 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	with open(output_path, "w") as result_file:
 		result_file.write(json_result)
 	print("Done...")
-	final_data = { "loss": (-next_u), "output": output_folder,
-		"result": result, "config": config, "input": data_folder}
+	final_data = { "loss": (LARGE_NUMBER - next_u),
+		"output": output_folder, "result": result,
+		"config": config, "input": data_folder}
 	return final_data
 
 def update_features(features_path, config):
