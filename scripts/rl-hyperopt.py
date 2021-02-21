@@ -3,7 +3,8 @@ import utils.hyperparams as hp
 from functools import partial
 
 def train_fn(rl_mod, config, data_folder, output_folder, fastmode, params):
-	config["params"] = params
+	config = config.copy()
+	config["params"] = params.copy()
 	output_folder = os.path.join(output_folder, uuid.uuid4().hex)
 	os.mkdir(output_folder)
 	return rl_mod.train_rl(data_folder, output_folder, config,
