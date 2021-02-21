@@ -197,9 +197,9 @@ def get_class(model_name):
 def get_model(data, config, predict=False):
 	if predict and "model_path" in config:
 		print("Using prediction for training...")
-		env = CustomStockEnvPred(test, config)
+		env = CustomStockEnvPred(data, config)
 	else:
-		env = CustomStockEnvDefault(test, config)
+		env = CustomStockEnvDefault(data, config)
 	model_fn = get_model_fn(config["model"])
 	model = model_fn(env, config)
 	return (model, env)
