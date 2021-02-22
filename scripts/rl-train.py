@@ -114,7 +114,7 @@ def train_rl(data_folder, output_folder, config, fast_mode,
 	with open(output_path, "w") as result_file:
 		result_file.write(json_result)
 	print("Done...")
-	final_data = { "loss": (-mp_next_u),
+	final_data = { "loss": (-next_u),
 		"output": output_folder, "result": result,
 		"config": config, "input": data_folder}
 	return final_data
